@@ -7,7 +7,7 @@ if [ ! -f /touched ]; then
 fi
 
 cd /opt/gluu/jetty/idp
-exec gosu root java -jar /opt/jetty/start.jar -server \
+exec java -jar /opt/jetty/start.jar -server \
     -Xms256m -Xmx2048m -XX:+DisableExplicitGC \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp
