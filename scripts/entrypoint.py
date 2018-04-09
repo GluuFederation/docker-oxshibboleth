@@ -12,6 +12,17 @@ GLUU_KV_PORT = os.environ.get("GLUU_KV_PORT", 8500)
 
 consul = consulate.Consul(host=GLUU_KV_HOST, port=GLUU_KV_PORT)
 
+CONFIG_PREFIX = "gluu/config/"
+
+
+def merge_path(name):
+    # example: `hostname` renamed to `gluu/config/hostname`
+    return "".join([CONFIG_PREFIX, name])
+
+
+def get_config(name, default=None):
+    return consul.kv.get(merge_path(name), default)
+
 
 def safe_render(text, ctx):
     text = re.sub(r"%([^\(])", r"%%\1", text)
@@ -23,19 +34,19 @@ def safe_render(text, ctx):
 def render_templates():
     ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
     ctx = {
-        "hostname": consul.kv.get("hostname"),
-        "shibJksPass": consul.kv.get("shibJksPass"),
+        "hostname": get_config("hostname"),
+        "shibJksPass": get_config("shibJksPass"),
         "certFolder": "/etc/certs",
         "ldap_hostname": ldap_hostname,
         "ldaps_port": ldaps_port,
-        "ldap_protocol": "ldaps" if consul.kv.get("use_ssl") else "ldap",
-        "ldap_use_ssl": consul.kv.get("ldap_use_ssl"),
-        "ldap_binddn": consul.kv.get("ldap_binddn"),
-        "ldapPass": consul.kv.get("encoded_ldap_pw"),
-        "inumOrg": consul.kv.get("inumOrg"),
+        "ldap_protocol": "ldaps",
+        "ldap_use_ssl": get_config("ldap_use_ssl"),
+        "ldap_binddn": get_config("ldap_binddn"),
+        "ldapPass": get_config("encoded_ldap_pw"),
+        "inumOrg": get_config("inumOrg"),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt", "idp3SigningCertificateText"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt", "idp3EncryptionCertificateText"),
-        "orgName": consul.kv.get("orgName"),
+        "orgName": get_config("orgName"),
     }
 
     for file_path in glob.glob("/opt/templates/*.properties"):
@@ -70,7 +81,7 @@ def exec_cmd(cmd):
 
 
 def gen_idp3_key():
-    shibJksPass = consul.kv.get("shibJksPass")
+    shibJksPass = get_config("shibJksPass")
     out, err, retcode = exec_cmd("java -classpath /tmp/idp3_cml_keygenerator.jar "
                                  "'org.xdi.oxshibboleth.keygenerator.KeyGenerator' "
                                  "/opt/shibboleth-idp/credentials {}".format(shibJksPass))
@@ -78,7 +89,7 @@ def gen_idp3_key():
 
 
 def load_cert_text(path, key):
-    cert = consul.kv.get(key)
+    cert = get_config(key)
     with open(path, "w") as fw:
         fw.write(cert)
     return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').strip()

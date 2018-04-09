@@ -1,5 +1,4 @@
 FROM openjdk:jre-alpine
-# FROM alpine:3.7
 
 LABEL maintainer="Gluu Inc. <support@gluu.org>"
 
@@ -11,12 +10,7 @@ RUN apk update && apk add --no-cache \
     unzip \
     wget \
     python \
-    py-pip \
-    bash
- #    openssl \
-
-# Set openjdk 8 as default java
-RUN cd /usr/lib/jvm && ln -s java-1.8.0-openjdk-amd64 default-java
+    py-pip
 
 # =====
 # Jetty
@@ -73,9 +67,8 @@ RUN wget -q ${OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL} -O /tmp/idp3_cml_keygenerator.ja
 # ======
 # Python
 # ======
-RUN pip install -U pip
-
-RUN pip install "consulate==0.6.0"
+RUN pip install -U pip \
+    && pip install "consulate==0.6.0"
 
 # ==========
 # misc stuff
