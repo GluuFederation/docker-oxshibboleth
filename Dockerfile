@@ -10,7 +10,10 @@ RUN apk update && apk add --no-cache \
     unzip \
     wget \
     python \
-    py-pip
+    py-pip \
+    rsync \
+    inotify-tools
+
 
 # =====
 # Jetty
@@ -68,7 +71,7 @@ RUN wget -q ${OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL} -O /tmp/idp3_cml_keygenerator.ja
 # Python
 # ======
 RUN pip install -U pip \
-    && pip install "consulate==0.6.0"
+    && pip install "consulate==0.6.0" "pydes==2.0.1"
 
 # ==========
 # misc stuff
@@ -80,7 +83,8 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/conf/authn \
     && mkdir -p /opt/shibboleth-idp/credentials \
     && mkdir -p /opt/shibboleth-idp/webapp \
-    && mkdir -p /etc/certs
+    && mkdir -p /etc/certs \
+	&& mkdir -p /etc/gluu/conf
 
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
