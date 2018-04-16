@@ -64,6 +64,10 @@ RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
 
+RUN cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/jetty/lib/
+# RUN mkdir -p /opt/shibboleth-idp/lib \
+#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
+
 # Install keygen
 RUN wget -q ${OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL} -O /tmp/idp3_cml_keygenerator.jar
 
@@ -84,10 +88,17 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/credentials \
     && mkdir -p /opt/shibboleth-idp/webapp \
     && mkdir -p /etc/certs \
-	&& mkdir -p /etc/gluu/conf
+    && mkdir -p /etc/gluu/conf
 
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
+
+ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
+ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
+
+VOLUME /opt/shared-shibboleth-idp
+
+RUN apk update && apk add --no-cache openssl
 
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
