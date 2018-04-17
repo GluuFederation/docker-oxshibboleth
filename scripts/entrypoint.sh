@@ -15,9 +15,8 @@ import_ssl_cert() {
 
 pull_shared_shib_files() {
     mkdir -p $GLUU_SHIB_TARGET_DIR $GLUU_SHIB_SOURCE_DIR
-    # sync existing files in source directory (mapped volume)
-    if [ -n "$(ls -A $GLUU_SHIB_SOURCE_DIR 2>/dev/null)" ]; then
-        cp -r $GLUU_SHIB_SOURCE_DIR/* $GLUU_SHIB_TARGET_DIR
+    if [ -n "$(ls -A $GLUU_SHIB_SOURCE_DIR/metadata 2>/dev/null)" ]; then
+        cp -r $GLUU_SHIB_SOURCE_DIR/metadata/* $GLUU_SHIB_TARGET_DIR/metadata/
     fi
 }
 
