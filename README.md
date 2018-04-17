@@ -21,7 +21,7 @@ Here's an example on how to run the container:
 ```
 docker run \
     -d \
-    -v $PWD/shared-shibboleth-idp:/opt/shared-shibboleth-idp \
+    -v $PWD/shared-shibboleth-idp:/opt/shibboleth-idp \
     -e GLUU_KV_HOST=consul.example.com \
     -e GLUU_KV_PORT=8500 \
     -e GLUU_LDAP_URL=ldap.example.com:1636 \
