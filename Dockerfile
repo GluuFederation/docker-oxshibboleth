@@ -9,11 +9,9 @@ LABEL maintainer="Gluu Inc. <support@gluu.org>"
 RUN apk update && apk add --no-cache \
     unzip \
     wget \
-    python \
     py-pip \
-    rsync \
-    inotify-tools
-
+    inotify-tools \
+    openssl
 
 # =====
 # Jetty
@@ -74,8 +72,9 @@ RUN wget -q ${OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL} -O /tmp/idp3_cml_keygenerator.ja
 # ======
 # Python
 # ======
-RUN pip install -U pip \
-    && pip install "consulate==0.6.0" "pydes==2.0.1"
+COPY requirements.txt /tmp/
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir -r /tmp/requirements.txt
 
 # ==========
 # misc stuff
@@ -97,8 +96,6 @@ ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
 ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
 
 VOLUME /opt/shared-shibboleth-idp
-
-RUN apk update && apk add --no-cache openssl
 
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
