@@ -17,7 +17,7 @@ RUN apk update && apk add --no-cache \
 # Jetty
 # =====
 
-ENV JETTY_VERSION 9.3.15.v20161220
+ENV JETTY_VERSION 9.4.9.v20180320
 ENV JETTY_TGZ_URL https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/${JETTY_VERSION}/jetty-distribution-${JETTY_VERSION}.tar.gz
 ENV JETTY_HOME /opt/jetty
 ENV JETTY_BASE /opt/gluu/jetty
@@ -37,8 +37,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION 3.1.2.Final
-ENV OX_BUILD_DATE 2018-01-18
+ENV OX_VERSION 3.1.3.Final
+ENV OX_BUILD_DATE 2018-04-30
 ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
 ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL http://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
 ENV OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL http://ox.gluu.org/maven/org/xdi/oxShibbolethKeyGenerator/${OX_VERSION}/oxShibbolethKeyGenerator-${OX_VERSION}.jar
@@ -53,7 +53,7 @@ LABEL vendor="Gluu Federation" \
 RUN wget -q ${OXSHIBBOLETH_DOWNLOAD_URL} -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
-    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=deploy,http,jsp,http-forwarded \
+    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,console-capture,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR
@@ -63,8 +63,6 @@ RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
     && rm -f /tmp/shibboleth-idp.jar
 
 RUN cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/jetty/lib/
-# RUN mkdir -p /opt/shibboleth-idp/lib \
-#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
 
 # Install keygen
 RUN wget -q ${OXSHIBBOLETH_KEYGEN_DOWNLOAD_URL} -O /tmp/idp3_cml_keygenerator.jar
