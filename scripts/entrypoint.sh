@@ -31,7 +31,11 @@ fi
 sh /opt/scripts/shibwatcher.sh &
 
 cd /opt/gluu/jetty/idp
-exec java -jar /opt/jetty/start.jar -server \
-    -Xms256m -Xmx2048m -XX:+DisableExplicitGC \
+exec java -jar /opt/jetty/start.jar \
+    -server \
+    -XX:+DisableExplicitGC \
+    -XX:+UnlockExperimentalVMOptions \
+    -XX:+UseCGroupMemoryLimitForHeap \
+    -XX:MaxRAMFraction=$GLUU_MAX_RAM_FRACTION \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp

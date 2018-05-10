@@ -94,6 +94,7 @@ COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
 
 ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
 ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
+ENV GLUU_MAX_RAM_FRACTION 1
 
 VOLUME /opt/shared-shibboleth-idp
 
