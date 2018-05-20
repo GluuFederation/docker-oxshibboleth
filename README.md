@@ -26,7 +26,7 @@ docker run \
     -e GLUU_KV_PORT=8500 \
     -e GLUU_LDAP_URL=ldap.example.com:1636 \
     -p 8086:8080
-    gluufederation/oxshibboleth:3.1.2_dev
+    gluufederation/oxshibboleth:3.1.3_dev
 ```
 
 ## Design Decisions
