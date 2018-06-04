@@ -83,14 +83,6 @@ def exec_cmd(cmd):
     return stdout, stderr, retcode
 
 
-def gen_idp3_key():
-    shibJksPass = get_config("shibJksPass")
-    out, err, retcode = exec_cmd("java -classpath /tmp/idp3_cml_keygenerator.jar "
-                                 "'org.xdi.oxshibboleth.keygenerator.KeyGenerator' "
-                                 "/opt/shibboleth-idp/credentials {}".format(shibJksPass))
-    return out, err, retcode
-
-
 def load_cert_text(path):
     with open(path) as f:
         cert = f.read()
@@ -188,12 +180,20 @@ def render_ssl_key():
             fd.write(ssl_key)
 
 
+def sync_sealer_jks():
+    jks = decrypt_text(get_config("sealer_jks_base64"),
+                       get_config("encoded_salt"))
+
+    with open("/opt/shibboleth-idp/credentials/sealer.jks", "wb") as fw:
+        fw.write(jks)
+
+
 if __name__ == "__main__":
     sync_idp_certs()
     sync_idp_keys()
     sync_idp_jks()
     render_templates()
-    gen_idp3_key()
+    sync_sealer_jks()
     render_salt()
     render_ldap_properties()
     sync_ldap_pkcs12()
