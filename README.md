@@ -2,6 +2,28 @@
 
 oxShibboleth is a Gluu Server implementation of the single sign-on Shibboleth system, packaged in a Docker image.
 
+## Latest Stable Release
+
+The latest stable release is `gluufederation/oxshibboleth:3.1.3_01`. Click [here](./CHANGES.md) for archived versions.
+
+## Versioning/Tagging
+
+This image uses its own versioning/tagging format.
+
+    <IMAGE-NAME>:<GLUU-SERVER-VERSION>_<RELEASE_VERSION>
+
+For example, `gluufederation/oxshibboleth:3.1.3_01` consists of:
+
+- `gluufederation/oxshibboleth` as `<IMAGE_NAME>`: the actual image name
+- `3.1.3` as `GLUU-SERVER-VERSION`: the Gluu Server version as setup reference
+- `01` as `<RELEASE_VERSION>`
+
+## Installation
+
+Pull the image:
+
+    docker pull gluufederation/oxshibboleth:3.1.3_01
+
 ## Environment Variables
 
 - `GLUU_KV_HOST`: host/IP address of Consul server
@@ -26,7 +48,7 @@ docker run \
     -e GLUU_KV_PORT=8500 \
     -e GLUU_LDAP_URL=ldap.example.com:1636 \
     -p 8086:8080
-    gluufederation/oxshibboleth:3.1.3_dev
+    gluufederation/oxshibboleth:3.1.3_01
 ```
 
 ## Design Decisions
