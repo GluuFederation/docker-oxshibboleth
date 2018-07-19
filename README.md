@@ -4,7 +4,7 @@ oxShibboleth is a Gluu Server implementation of the single sign-on Shibboleth sy
 
 ## Latest Stable Release
 
-The latest stable release is `gluufederation/oxshibboleth:3.1.3_01`. Click [here](./CHANGES.md) for archived versions.
+The latest stable release is `gluufederation/oxshibboleth:3.1.3_02`. Click [here](./CHANGES.md) for archived versions.
 
 ## Versioning/Tagging
 
@@ -12,25 +12,35 @@ This image uses its own versioning/tagging format.
 
     <IMAGE-NAME>:<GLUU-SERVER-VERSION>_<RELEASE_VERSION>
 
-For example, `gluufederation/oxshibboleth:3.1.3_01` consists of:
+For example, `gluufederation/oxshibboleth:3.1.3_02` consists of:
 
 - `gluufederation/oxshibboleth` as `<IMAGE_NAME>`: the actual image name
 - `3.1.3` as `GLUU-SERVER-VERSION`: the Gluu Server version as setup reference
-- `01` as `<RELEASE_VERSION>`
+- `02` as `<RELEASE_VERSION>`
 
 ## Installation
 
 Pull the image:
 
-    docker pull gluufederation/oxshibboleth:3.1.3_01
+    docker pull gluufederation/oxshibboleth:3.1.3_02
 
 ## Environment Variables
 
-- `GLUU_KV_HOST`: host/IP address of Consul server
-- `GLUU_KV_PORT`: port where Consul server is listening
 - `GLUU_LDAP_URL`: URL to LDAP server (in `host:port` format)
 - `GLUU_SHIB_SOURCE_DIR`: absolute path to directory that shared Shibboleth files are copied from
 - `GLUU_SHIB_TARGET_DIR`: absolute path to directory that shared Shibboleth files are copied to
+- `GLUU_CONFIG_ADAPTER`: config backend (either `consul` for Consul KV or `kubernetes` for Kubernetes configmap)
+
+The following environment variables are activated only if `GLUU_CONFIG_ADAPTER` is set to `consul`:
+
+- `GLUU_CONSUL_HOST`: hostname or IP of Consul (default to `localhost`)
+- `GLUU_CONSUL_PORT`: port of Consul (default to `8500`)
+- `GLUU_CONSUL_CONSISTENCY`: Consul consistency mode (choose one of `default`, `consistent`, or `stale`). Default to `stale` mode.
+
+otherwise, if `GLUU_CONFIG_ADAPTER` is set to `kubernetes`:
+
+- `GLUU_KUBERNETES_NAMESPACE`: Kubernetes namespace (default to `default`)
+- `GLUU_KUBERNETES_CONFIGMAP`: Kubernetes configmap name (default to `gluu`)
 
 ## Volumes
 
@@ -44,11 +54,10 @@ Here's an example of how to run the container:
 docker run \
     -d \
     -v $PWD/shared-shibboleth-idp:/opt/shared-shibboleth-idp \
-    -e GLUU_KV_HOST=consul.example.com \
-    -e GLUU_KV_PORT=8500 \
+    -e GLUU_CONSUL_HOST=consul.example.com \
     -e GLUU_LDAP_URL=ldap.example.com:1636 \
     -p 8086:8080
-    gluufederation/oxshibboleth:3.1.3_01
+    gluufederation/oxshibboleth:3.1.3_02
 ```
 
 ## Design Decisions
