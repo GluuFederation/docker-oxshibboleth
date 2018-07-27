@@ -32,7 +32,7 @@ def render_templates():
         "ldap_protocol": "ldaps",
         "ldap_use_ssl": config_manager.get("ldap_use_ssl"),
         "ldap_binddn": config_manager.get("ldap_binddn"),
-        "ldapPass": config_manager.get("encoded_ldap_pw"),
+        "ldapPass": decrypt_text(config_manager.get("encoded_ox_ldap_pw"), config_manager.get("encoded_salt")),
         "inumOrg": config_manager.get("inumOrg"),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
