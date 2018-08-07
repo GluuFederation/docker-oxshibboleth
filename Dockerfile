@@ -61,9 +61,8 @@ RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
 
-RUN cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/jetty/lib/
-# RUN mkdir -p /opt/shibboleth-idp/lib \
-#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
+RUN mkdir -p /opt/shibboleth-idp/lib \
+    && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
 
 # ======
 # Python
