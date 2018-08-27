@@ -21,7 +21,11 @@ pull_shared_shib_files() {
 }
 
 if [ ! -f /touched ]; then
-    python /opt/scripts/entrypoint.py
+    if [ -f /etc/redhat-release ]; then
+        source scl_source enable python27 && python /opt/scripts/entrypoint.py
+    else
+        python /opt/scripts/entrypoint.py
+    fi
     import_ssl_cert
     pull_shared_shib_files
     touch /touched
