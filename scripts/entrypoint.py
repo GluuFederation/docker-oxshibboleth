@@ -29,8 +29,6 @@ def render_templates():
         "certFolder": "/etc/certs",
         "ldap_hostname": ldap_hostname,
         "ldaps_port": ldaps_port,
-        "ldap_protocol": "ldaps",
-        "ldap_use_ssl": config_manager.get("ldap_use_ssl"),
         "ldap_binddn": config_manager.get("ldap_binddn"),
         "ldapPass": decrypt_text(config_manager.get("encoded_ox_ldap_pw"), config_manager.get("encoded_salt")),
         "inumOrg": config_manager.get("inumOrg"),
