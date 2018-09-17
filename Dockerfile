@@ -38,7 +38,7 @@ EXPOSE 8080
 # ============
 
 ENV OX_VERSION 3.1.4-SNAPSHOT
-ENV OX_BUILD_DATE "2018-09-14 15:03"
+ENV OX_BUILD_DATE 2018-09-15
 ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
 ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
 
@@ -64,13 +64,6 @@ RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
 # RUN mkdir -p /opt/shibboleth-idp/lib \
 #     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
 
-# ======
-# Python
-# ======
-COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt
-
 # ====
 # Tini
 # ====
@@ -78,6 +71,13 @@ RUN pip install --no-cache-dir -U pip \
 ENV TINI_VERSION v0.18.0
 RUN wget -q https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static -O /usr/bin/tini \
     && chmod +x /usr/bin/tini
+
+# ======
+# Python
+# ======
+COPY requirements.txt /tmp/
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir -r /tmp/requirements.txt
 
 # ==========
 # misc stuff
