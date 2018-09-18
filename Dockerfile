@@ -38,7 +38,7 @@ EXPOSE 8080
 # ============
 
 ENV OX_VERSION 3.1.4-SNAPSHOT
-ENV OX_BUILD_DATE 2018-09-15
+ENV OX_BUILD_DATE 2018-09-17
 ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
 ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
 
