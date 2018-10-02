@@ -38,7 +38,7 @@ EXPOSE 8080
 # ============
 
 ENV OX_VERSION 3.1.4.Final
-ENV OX_BUILD_DATE 2018-09-26
+ENV OX_BUILD_DATE 2018-09-27
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
