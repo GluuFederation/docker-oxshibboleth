@@ -39,6 +39,8 @@ EXPOSE 8080
 
 ENV OX_VERSION 3.1.4.Final
 ENV OX_BUILD_DATE 2018-09-27
+ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
+ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -47,14 +49,14 @@ LABEL vendor="Gluu Federation" \
       org.gluu.oxshibboleth.build-date="${OX_BUILD_DATE}"
 
 # Install oxShibboleth WAR
-RUN wget -q https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war -O /tmp/oxshibboleth.war \
+RUN wget -q ${OXSHIBBOLETH_DOWNLOAD_URL} -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
     && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR
-RUN wget -q https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar -O /tmp/shibboleth-idp.jar \
+RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
     && unzip -qq /tmp/shibboleth-idp.jar -d /opt \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
