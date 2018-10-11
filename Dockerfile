@@ -1,4 +1,4 @@
-FROM openjdk:jre-alpine
+FROM openjdk:8-jre-alpine
 
 LABEL maintainer="Gluu Inc. <support@gluu.org>"
 
@@ -37,10 +37,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION 3.1.3.Final
-ENV OX_BUILD_DATE 2018-04-30
-ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
-ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
+ENV OX_VERSION 3.1.4.Final
+ENV OX_BUILD_DATE 2018-09-27
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -49,20 +47,28 @@ LABEL vendor="Gluu Federation" \
       org.gluu.oxshibboleth.build-date="${OX_BUILD_DATE}"
 
 # Install oxShibboleth WAR
-RUN wget -q ${OXSHIBBOLETH_DOWNLOAD_URL} -O /tmp/oxshibboleth.war \
+RUN wget -q https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
     && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR
-RUN wget -q ${OXSHIBBOLETH_STATIC_DOWNLOAD_URL} -O /tmp/shibboleth-idp.jar \
+RUN wget -q https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar -O /tmp/shibboleth-idp.jar \
     && unzip -qq /tmp/shibboleth-idp.jar -d /opt \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
 
-RUN mkdir -p /opt/shibboleth-idp/lib \
-    && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
+# RUN mkdir -p /opt/shibboleth-idp/lib \
+#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
+
+# ====
+# Tini
+# ====
+
+ENV TINI_VERSION v0.18.0
+RUN wget -q https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static -O /usr/bin/tini \
+    && chmod +x /usr/bin/tini
 
 # ======
 # Python
@@ -87,6 +93,19 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
 
+ENV GLUU_CONFIG_ADAPTER consul
+ENV GLUU_CONSUL_HOST localhost
+ENV GLUU_CONSUL_PORT 8500
+ENV GLUU_CONSUL_CONSISTENCY stale
+ENV GLUU_CONSUL_SCHEME http
+ENV GLUU_CONSUL_VERIFY false
+ENV GLUU_CONSUL_CACERT_FILE /etc/certs/consul_ca.crt
+ENV GLUU_CONSUL_CERT_FILE /etc/certs/consul_client.crt
+ENV GLUU_CONSUL_KEY_FILE /etc/certs/consul_client.key
+ENV GLUU_CONSUL_TOKEN_FILE /etc/certs/consul_token
+ENV GLUU_LDAP_URL localhost:1636
+ENV GLUU_KUBERNETES_NAMESPACE default
+ENV GLUU_KUBERNETES_CONFIGMAP gluu
 ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
 ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
 ENV GLUU_MAX_RAM_FRACTION 1
@@ -96,4 +115,6 @@ VOLUME /opt/shared-shibboleth-idp
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
 RUN chmod +x /opt/scripts/wait-for-it.sh
+
+ENTRYPOINT ["tini", "--"]
 CMD ["/opt/scripts/wait-for-it.sh", "/opt/scripts/entrypoint.sh"]

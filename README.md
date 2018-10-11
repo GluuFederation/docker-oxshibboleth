@@ -4,4 +4,4 @@ oxShibboleth is a Gluu Server implementation of the single sign-on Shibboleth sy
 
 ## Documentation
 
-The official documentation can be found at https://gluu.org/docs/ce/3.1.3/docker/intro/.
+The official documentation can be found at https://gluu.org/docs/ce/3.1.4/docker/intro/.
