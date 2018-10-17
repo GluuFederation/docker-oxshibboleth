@@ -73,8 +73,6 @@ ENV TINI_VERSION v0.18.0
 RUN wget -q https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static -O /usr/bin/tini \
     && chmod +x /usr/bin/tini
 
-
-
 # ======
 # Python
 # ======
@@ -122,6 +120,13 @@ COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
 RUN chmod +x /opt/scripts/wait-for-it.sh
 RUN mkdir -p /usr/lib/jvm/default-jvm && ln -s /usr/lib/jvm/jre /usr/lib/jvm/default-jvm/jre
+
+# allow root group to write files to directories below
+RUN chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
+    && chgrp -R 0 ${JETTY_BASE} && chmod -R g=u ${JETTY_BASE} \
+    && chgrp -R 0 /etc/gluu/conf && chmod -R g=u /etc/gluu/conf \
+    && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
+    && chgrp -R 0 /opt/shared-shibboleth-idp && chmod -R g=u /opt/shared-shibboleth-idp
 
 ENTRYPOINT ["tini", "--"]
 CMD ["/opt/scripts/wait-for-it.sh", "/opt/scripts/entrypoint.sh"]
