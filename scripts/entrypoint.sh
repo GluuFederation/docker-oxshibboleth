@@ -20,7 +20,7 @@ pull_shared_shib_files() {
     fi
 }
 
-if [ ! -f /touched ]; then
+if [ ! -f /deploy/touched ]; then
     if [ -f /etc/redhat-release ]; then
         source scl_source enable python27 && python /opt/scripts/entrypoint.py
     else
@@ -28,7 +28,7 @@ if [ ! -f /touched ]; then
     fi
     import_ssl_cert
     pull_shared_shib_files
-    touch /touched
+    touch /deploy/touched
 fi
 
 # monitor filesystem changes in Shibboleth-related files

@@ -1,17 +1,17 @@
 FROM registry.access.redhat.com/rhel7-minimal
 
-LABEL maintainer="Gluu Inc. <support@gluu.org>"
-
 # =============
 # RHEL packages
 # =============
-RUN microdnf --enablerepo=rhel-server-rhscl-7-rpms --enablerepo=rhel-7-server-rpms install \
-    python27-python-pip openssl wget unzip java-1.8.0-openjdk-headless tar gzip coreutils net-tools bind-utils iputils \
+
+RUN REPOLIST=rhel-7-server-rpms,rhel-server-rhscl-7-rpms \
+    INSTALL_PKGS="python27-python-pip openssl wget unzip java-1.8.0-openjdk-headless tar gzip coreutils net-tools bind-utils iputils shadow-utils" \
+    && microdnf -y update --enablerepo rhel-7-server-rpms --enablerepo rhel-server-rhscl-7-rpms --setopt=tsflags=nodocs \
+    && microdnf -y install --enablerepo rhel-7-server-rpms --enablerepo rhel-server-rhscl-7-rpms --setopt=tsflags=nodocs ${INSTALL_PKGS} \
     && wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -O /tmp/epel-release-latest-7.noarch.rpm \
     && rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
     && rpm --install -f /tmp/epel-release-latest-7.noarch.rpm \
     && microdnf install inotify-tools \
-    && microdnf update \
     && microdnf clean all
 
 # =====
@@ -42,12 +42,6 @@ ENV OX_VERSION 3.1.4.Final
 ENV OX_BUILD_DATE 2018-09-27
 ENV OXSHIBBOLETH_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war
 ENV OXSHIBBOLETH_STATIC_DOWNLOAD_URL https://ox.gluu.org/maven/org/xdi/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar
-
-# the LABEL defined before downloading ox war/jar files to make sure
-# it gets the latest build for specific version
-LABEL vendor="Gluu Federation" \
-      org.gluu.oxshibboleth.version="${OX_VERSION}" \
-      org.gluu.oxshibboleth.build-date="${OX_BUILD_DATE}"
 
 # Install oxShibboleth WAR
 RUN wget -q ${OXSHIBBOLETH_DOWNLOAD_URL} -O /tmp/oxshibboleth.war \
@@ -85,6 +79,14 @@ RUN source scl_source enable python27 \
 # misc stuff
 # ==========
 
+LABEL name="oxShibboleth" \
+    maintainer="Gluu Inc. <support@gluu.org>" \
+    vendor="Gluu Federation" \
+    version="3.1.4" \
+    release="01" \
+    summary="Gluu's oxShibboleth app" \
+    description="Shibboleth V3 modifications"
+
 RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/logs \
     && mkdir -p /opt/shibboleth-idp/lib \
@@ -92,7 +94,8 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/credentials \
     && mkdir -p /opt/shibboleth-idp/webapp \
     && mkdir -p /etc/certs \
-    && mkdir -p /etc/gluu/conf
+    && mkdir -p /etc/gluu/conf \
+    && mkdir -p /deploy
 
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
@@ -121,12 +124,20 @@ RUN chmod +x /opt/scripts/entrypoint.sh
 RUN chmod +x /opt/scripts/wait-for-it.sh
 RUN mkdir -p /usr/lib/jvm/default-jvm && ln -s /usr/lib/jvm/jre /usr/lib/jvm/default-jvm/jre
 
-# allow root group to write files to directories below
-RUN chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
-    && chgrp -R 0 ${JETTY_BASE} && chmod -R g=u ${JETTY_BASE} \
-    && chgrp -R 0 /etc/gluu/conf && chmod -R g=u /etc/gluu/conf \
-    && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
-    && chgrp -R 0 /opt/shared-shibboleth-idp && chmod -R g=u /opt/shared-shibboleth-idp
+# create jetty user
+RUN useradd -ms /bin/sh jetty
+# adjust ownership
+RUN chown -R root:jetty /etc/certs \
+    && chown -R root:jetty /etc/gluu \
+    && chown -R jetty:jetty /opt/jetty \
+    && chown -R jetty:jetty /deploy \
+    && chown -R jetty:jetty /opt/shared-shibboleth-idp \
+    && chown -R jetty:jetty /opt/shibboleth-idp \
+    && chown root:jetty /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
+    && chmod -R g+w /etc/certs \
+    && chmod -R g+w /etc/gluu \
+    && chmod -R g+w /usr/lib/jvm/default-jvm/jre/lib/security/cacerts
 
+USER jetty
 ENTRYPOINT ["tini", "--"]
 CMD ["/opt/scripts/wait-for-it.sh", "/opt/scripts/entrypoint.sh"]
