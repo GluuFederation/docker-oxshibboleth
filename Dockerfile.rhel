@@ -98,6 +98,10 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /deploy \
     && mkdir -p /opt/shared-shibboleth-idp
 
+# license
+RUN mkdir -p /licenses
+COPY LICENSE /licenses/MIT.txt
+
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
 
