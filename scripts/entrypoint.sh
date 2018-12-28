@@ -20,15 +20,31 @@ pull_shared_shib_files() {
     fi
 }
 
-if [ ! -f /touched ]; then
-    python /opt/scripts/entrypoint.py
-    import_ssl_cert
-    pull_shared_shib_files
-    touch /touched
+if [ ! -f /deploy/touched ]; then
+    if [ -f /touched ]; then
+        # backward-compat
+        mv /touched /deploy/touched
+    else
+        if [ -f /etc/redhat-release ]; then
+            source scl_source enable ptyhon27 && python /opt/scripts/wait_for.py --deps="config,secret" && python /opt/scripts/entrypoint.py
+        else
+            python /opt/scripts/wait_for.py --deps="config,secret" && python /opt/scripts/entrypoint.py
+        fi
+
+        import_ssl_cert
+        pull_shared_shib_files
+        touch /deploy/touched
+    fi
 fi
 
 # monitor filesystem changes in Shibboleth-related files
 sh /opt/scripts/shibwatcher.sh &
+
+if [ -f /etc/redhat-release ]; then
+    source scl_source enable python27 && python /opt/scripts/wait_for.py --deps="ldap"
+else
+    python /opt/scripts/wait_for.py --deps="ldap"
+fi
 
 cd /opt/gluu/jetty/idp
 exec java -jar /opt/jetty/start.jar \

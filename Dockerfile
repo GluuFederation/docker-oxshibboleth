@@ -11,7 +11,8 @@ RUN apk update && apk add --no-cache \
     wget \
     py-pip \
     inotify-tools \
-    openssl
+    openssl \
+    shadow
 
 # =====
 # Jetty
@@ -73,9 +74,50 @@ RUN wget -q https://github.com/krallin/tini/releases/download/${TINI_VERSION}/ti
 # ======
 # Python
 # ======
+
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /tmp/requirements.txt
+
+# ==========
+# Config ENV
+# ==========
+
+ENV GLUU_CONFIG_ADAPTER consul
+ENV GLUU_CONFIG_CONSUL_HOST localhost
+ENV GLUU_CONFIG_CONSUL_PORT 8500
+ENV GLUU_CONFIG_CONSUL_CONSISTENCY stale
+ENV GLUU_CONFIG_CONSUL_SCHEME http
+ENV GLUU_CONFIG_CONSUL_VERIFY false
+ENV GLUU_CONFIG_CONSUL_CACERT_FILE /etc/certs/consul_ca.crt
+ENV GLUU_CONFIG_CONSUL_CERT_FILE /etc/certs/consul_client.crt
+ENV GLUU_CONFIG_CONSUL_KEY_FILE /etc/certs/consul_client.key
+ENV GLUU_CONFIG_CONSUL_TOKEN_FILE /etc/certs/consul_token
+ENV GLUU_CONFIG_KUBERNETES_NAMESPACE default
+ENV GLUU_CONFIG_KUBERNETES_CONFIGMAP gluu
+
+# ==========
+# Secret ENV
+# ==========
+
+ENV GLUU_SECRET_ADAPTER vault
+ENV GLUU_SECRET_VAULT_URL http://localhost:8200
+ENV GLUU_SECRET_VAULT_ROLE_ID_FILE /etc/certs/vault_role_id
+ENV GLUU_SECRET_VAULT_SECRET_ID_FILE /etc/certs/vault_secret_id
+ENV GLUU_SECRET_VAULT_CERT_FILE /etc/certs/vault_client.crt
+ENV GLUU_SECRET_VAULT_KEY_FILE /etc/certs/vault_client.key
+ENV GLUU_SECRET_VAULT_CACERT_FILE /etc/certs/vault_ca.crt
+ENV GLUU_SECRET_KUBERNETES_NAMESPACE default
+ENV GLUU_SECRET_KUBERNETES_SECRET gluu
+ENV GLUU_SECRET_KUBERNETES_USE_KUBE_CONFIG false
+
+# ===========
+# Generic ENV
+# ===========
+
+ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
+ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
+ENV GLUU_MAX_RAM_FRACTION 1
 
 # ==========
 # misc stuff
@@ -88,31 +130,34 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/credentials \
     && mkdir -p /opt/shibboleth-idp/webapp \
     && mkdir -p /etc/certs \
-    && mkdir -p /etc/gluu/conf
+    && mkdir -p /etc/gluu/conf \
+    && mkdir -p /deploy \
+    && mkdir -p /opt/shared-shibboleth-idp
 
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
-
-ENV GLUU_CONFIG_ADAPTER consul
-ENV GLUU_CONSUL_HOST localhost
-ENV GLUU_CONSUL_PORT 8500
-ENV GLUU_CONSUL_CONSISTENCY stale
-ENV GLUU_CONSUL_SCHEME http
-ENV GLUU_CONSUL_VERIFY false
-ENV GLUU_CONSUL_CACERT_FILE /etc/certs/consul_ca.crt
-ENV GLUU_CONSUL_CERT_FILE /etc/certs/consul_client.crt
-ENV GLUU_CONSUL_KEY_FILE /etc/certs/consul_client.key
-ENV GLUU_CONSUL_TOKEN_FILE /etc/certs/consul_token
-ENV GLUU_LDAP_URL localhost:1636
-ENV GLUU_KUBERNETES_NAMESPACE default
-ENV GLUU_KUBERNETES_CONFIGMAP gluu
-ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
-ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
-ENV GLUU_MAX_RAM_FRACTION 1
-
-VOLUME /opt/shared-shibboleth-idp
-
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
-ENTRYPOINT ["tini", "--"]
-CMD ["/opt/scripts/wait-for-it", "/opt/scripts/entrypoint.sh"]
+
+# create jetty user
+RUN useradd -ms /bin/sh --uid 1000 jetty \
+    && usermod -a -G root jetty
+
+# adjust ownership
+RUN chown -R 1000:1000 /opt/gluu/jetty \
+    && chown -R 1000:1000 /deploy \
+    && chown -R 1000:1000 /opt/shared-shibboleth-idp \
+    && chown -R 1000:1000 /opt/shibboleth-idp \
+    && chmod -R g+w /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
+    && chgrp -R 0 /opt/gluu/jetty && chmod -R g=u /opt/gluu/jetty \
+    && chgrp -R 0 /opt/shared-shibboleth-idp && chmod -R g=u /opt/shared-shibboleth-idp \
+    && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
+    && chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
+    && chgrp -R 0 /etc/gluu && chmod -R g=u /etc/gluu \
+    && chgrp -R 0 /deploy && chmod -R g=u /deploy
+
+# run as non-root user
+USER 1000
+
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/opt/scripts/entrypoint.sh"]
