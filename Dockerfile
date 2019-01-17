@@ -18,7 +18,7 @@ RUN apk update && apk add --no-cache \
 # Jetty
 # =====
 
-ENV JETTY_VERSION 9.4.9.v20180320
+ENV JETTY_VERSION 9.4.12.v20180830
 ENV JETTY_TGZ_URL https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/${JETTY_VERSION}/jetty-distribution-${JETTY_VERSION}.tar.gz
 ENV JETTY_HOME /opt/jetty
 ENV JETTY_BASE /opt/gluu/jetty
@@ -38,8 +38,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION 3.1.4.Final
-ENV OX_BUILD_DATE 2018-09-27
+ENV OX_VERSION 3.1.5.Final
+ENV OX_BUILD_DATE 2019-01-14
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -51,7 +51,7 @@ LABEL vendor="Gluu Federation" \
 RUN wget -q https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
-    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,jsp \
+    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,threadpool,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR

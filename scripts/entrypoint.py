@@ -35,7 +35,7 @@ def render_templates():
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
-        "ldap_ssl_cert_fn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
+        "ldapCertFn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
     }
 
     for file_path in glob.glob("/opt/templates/*.properties"):
