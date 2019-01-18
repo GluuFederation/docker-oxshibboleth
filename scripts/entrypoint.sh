@@ -20,15 +20,21 @@ pull_shared_shib_files() {
     fi
 }
 
+if [ -f /etc/redhat-release ]; then
+    source scl_source enable ptyhon27 && python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+else
+    python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+fi
+
 if [ ! -f /deploy/touched ]; then
     if [ -f /touched ]; then
         # backward-compat
         mv /touched /deploy/touched
     else
         if [ -f /etc/redhat-release ]; then
-            source scl_source enable ptyhon27 && python /opt/scripts/wait_for.py --deps="config,secret,ldap" && python /opt/scripts/entrypoint.py
+            source scl_source enable ptyhon27 && python /opt/scripts/entrypoint.py
         else
-            python /opt/scripts/wait_for.py --deps="config,secret,ldap" && python /opt/scripts/entrypoint.py
+            python /opt/scripts/entrypoint.py
         fi
 
         import_ssl_cert
