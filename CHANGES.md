@@ -2,6 +2,18 @@
 
 Here you can see an overview of changes between each release.
 
+## Version 3.1.5_01
+
+Released on March 23rd, 2019.
+
+* Upgraded to Gluu Server 3.1.5.
+
+## Version 3.1.4_01
+
+Released on November 12th, 2018.
+
+* Upgraded to Gluu Server 3.1.4.
+
 ## Version 3.1.3_06
 
 Released on September 18th, 2018.
