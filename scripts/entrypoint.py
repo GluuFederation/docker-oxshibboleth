@@ -7,11 +7,11 @@ import subprocess
 
 import pyDes
 
-from gluu_config import ConfigManager
+from gluulib import get_manager
 
 GLUU_LDAP_URL = os.environ.get("GLUU_LDAP_URL", "localhost:1636")
 
-config_manager = ConfigManager()
+manager = get_manager()
 
 
 def safe_render(text, ctx):
@@ -24,18 +24,18 @@ def safe_render(text, ctx):
 def render_templates():
     ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
     ctx = {
-        "hostname": config_manager.get("hostname"),
-        "shibJksPass": config_manager.get("shibJksPass"),
+        "hostname": manager.config.get("hostname"),
+        "shibJksPass": manager.secret.get("shibJksPass"),
         "certFolder": "/etc/certs",
         "ldap_hostname": ldap_hostname,
         "ldaps_port": ldaps_port,
-        "ldap_binddn": config_manager.get("ldap_binddn"),
-        "ldapPass": decrypt_text(config_manager.get("encoded_ox_ldap_pw"), config_manager.get("encoded_salt")),
-        "inumOrg": config_manager.get("inumOrg"),
+        "ldap_binddn": manager.config.get("ldap_binddn"),
+        "ldapPass": decrypt_text(manager.secret.get("encoded_ox_ldap_pw"), manager.secret.get("encoded_salt")),
+        "inumOrg": manager.config.get("inumOrg"),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
-        "orgName": config_manager.get("orgName"),
-        "ldap_ssl_cert_fn": "/etc/certs/{}.crt".format(config_manager.get("ldap_type")),
+        "orgName": manager.config.get("orgName"),
+        "ldapCertFn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
     }
 
     for file_path in glob.glob("/opt/templates/*.properties"):
@@ -76,27 +76,27 @@ def load_cert_text(path):
 
 
 def sync_idp_certs():
-    cert = config_manager.get("idp3SigningCertificateText")
+    cert = manager.secret.get("idp3SigningCertificateText")
     with open("/etc/certs/idp-signing.crt", "w") as f:
         f.write(cert)
 
-    cert = config_manager.get("idp3EncryptionCertificateText")
+    cert = manager.secret.get("idp3EncryptionCertificateText")
     with open("/etc/certs/idp-encryption.crt", "w") as f:
         f.write(cert)
 
 
 def sync_idp_keys():
-    key = config_manager.get("idp3SigningKeyText")
+    key = manager.secret.get("idp3SigningKeyText")
     with open("/etc/certs/idp-signing.key", "w") as f:
         f.write(key)
 
-    key = config_manager.get("idp3EncryptionKeyText")
+    key = manager.secret.get("idp3EncryptionKeyText")
     with open("/etc/certs/idp-encryption.key", "w") as f:
         f.write(key)
 
 
 def render_salt():
-    encode_salt = config_manager.get("encoded_salt")
+    encode_salt = manager.secret.get("encoded_salt")
 
     with open("/opt/templates/salt.tmpl") as fr:
         txt = fr.read()
@@ -111,12 +111,12 @@ def render_ldap_properties():
 
         with open("/etc/gluu/conf/ox-ldap.properties", "w") as fw:
             rendered_txt = txt % {
-                "ldap_binddn": config_manager.get("ldap_binddn"),
-                "encoded_ox_ldap_pw": config_manager.get("encoded_ox_ldap_pw"),
-                "inumAppliance": config_manager.get("inumAppliance"),
+                "ldap_binddn": manager.config.get("ldap_binddn"),
+                "encoded_ox_ldap_pw": manager.secret.get("encoded_ox_ldap_pw"),
+                "inumAppliance": manager.config.get("inumAppliance"),
                 "ldap_url": GLUU_LDAP_URL,
-                "ldapTrustStoreFn": config_manager.get("ldapTrustStoreFn"),
-                "encoded_ldapTrustStorePass": config_manager.get("encoded_ldapTrustStorePass")
+                "ldapTrustStoreFn": manager.config.get("ldapTrustStoreFn"),
+                "encoded_ldapTrustStorePass": manager.secret.get("encoded_ldapTrustStorePass")
             }
             fw.write(rendered_txt)
 
@@ -129,46 +129,46 @@ def decrypt_text(encrypted_text, key):
 
 
 def sync_ldap_pkcs12():
-    pkcs = decrypt_text(config_manager.get("ldap_pkcs12_base64"),
-                        config_manager.get("encoded_salt"))
+    pkcs = decrypt_text(manager.secret.get("ldap_pkcs12_base64"),
+                        manager.secret.get("encoded_salt"))
 
-    with open(config_manager.get("ldapTrustStoreFn"), "wb") as fw:
+    with open(manager.config.get("ldapTrustStoreFn"), "wb") as fw:
         fw.write(pkcs)
 
 
 def sync_ldap_cert():
-    cert = decrypt_text(config_manager.get("ldap_ssl_cert"),
-                        config_manager.get("encoded_salt"))
+    cert = decrypt_text(manager.secret.get("ldap_ssl_cert"),
+                        manager.secret.get("encoded_salt"))
 
-    with open("/etc/certs/{}.crt".format(config_manager.get("ldap_type")), "wb") as fw:
+    with open("/etc/certs/{}.crt".format(manager.config.get("ldap_type")), "wb") as fw:
         fw.write(cert)
 
 
 def sync_idp_jks():
-    jks = decrypt_text(config_manager.get("shibIDP_jks_base64"),
-                       config_manager.get("encoded_salt"))
+    jks = decrypt_text(manager.secret.get("shibIDP_jks_base64"),
+                       manager.secret.get("encoded_salt"))
 
     with open("/etc/certs/shibIDP.jks", "wb") as fw:
         fw.write(jks)
 
 
 def render_ssl_cert():
-    ssl_cert = config_manager.get("ssl_cert")
+    ssl_cert = manager.secret.get("ssl_cert")
     if ssl_cert:
         with open("/etc/certs/gluu_https.crt", "w") as fd:
             fd.write(ssl_cert)
 
 
 def render_ssl_key():
-    ssl_key = config_manager.get("ssl_key")
+    ssl_key = manager.secret.get("ssl_key")
     if ssl_key:
         with open("/etc/certs/gluu_https.key", "w") as fd:
             fd.write(ssl_key)
 
 
 def sync_sealer_jks():
-    jks = decrypt_text(config_manager.get("sealer_jks_base64"),
-                       config_manager.get("encoded_salt"))
+    jks = decrypt_text(manager.secret.get("sealer_jks_base64"),
+                       manager.secret.get("encoded_salt"))
 
     with open("/opt/shibboleth-idp/credentials/sealer.jks", "wb") as fw:
         fw.write(jks)

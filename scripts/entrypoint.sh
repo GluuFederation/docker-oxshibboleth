@@ -20,11 +20,27 @@ pull_shared_shib_files() {
     fi
 }
 
-if [ ! -f /touched ]; then
-    python /opt/scripts/entrypoint.py
-    import_ssl_cert
-    pull_shared_shib_files
-    touch /touched
+if [ -f /etc/redhat-release ]; then
+    source scl_source enable ptyhon27 && python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+else
+    python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+fi
+
+if [ ! -f /deploy/touched ]; then
+    if [ -f /touched ]; then
+        # backward-compat
+        mv /touched /deploy/touched
+    else
+        if [ -f /etc/redhat-release ]; then
+            source scl_source enable ptyhon27 && python /opt/scripts/entrypoint.py
+        else
+            python /opt/scripts/entrypoint.py
+        fi
+
+        import_ssl_cert
+        pull_shared_shib_files
+        touch /deploy/touched
+    fi
 fi
 
 # monitor filesystem changes in Shibboleth-related files

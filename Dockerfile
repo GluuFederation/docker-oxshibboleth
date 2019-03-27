@@ -11,13 +11,14 @@ RUN apk update && apk add --no-cache \
     wget \
     py-pip \
     inotify-tools \
-    openssl
+    openssl \
+    shadow
 
 # =====
 # Jetty
 # =====
 
-ENV JETTY_VERSION 9.4.9.v20180320
+ENV JETTY_VERSION 9.4.12.v20180830
 ENV JETTY_TGZ_URL https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/${JETTY_VERSION}/jetty-distribution-${JETTY_VERSION}.tar.gz
 ENV JETTY_HOME /opt/jetty
 ENV JETTY_BASE /opt/gluu/jetty
@@ -37,8 +38,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION 3.1.4.Final
-ENV OX_BUILD_DATE 2018-09-27
+ENV OX_VERSION 3.1.5.Final
+ENV OX_BUILD_DATE 2019-01-14
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -50,7 +51,7 @@ LABEL vendor="Gluu Federation" \
 RUN wget -q https://ox.gluu.org/maven/org/xdi/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
-    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,jsp \
+    && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,threadpool,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR
@@ -73,9 +74,63 @@ RUN wget -q https://github.com/krallin/tini/releases/download/${TINI_VERSION}/ti
 # ======
 # Python
 # ======
+
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /tmp/requirements.txt
+
+# =======
+# License
+# =======
+
+RUN mkdir -p /licenses
+COPY LICENSE /licenses/
+
+# ==========
+# Config ENV
+# ==========
+
+ENV GLUU_CONFIG_ADAPTER consul
+ENV GLUU_CONFIG_CONSUL_HOST localhost
+ENV GLUU_CONFIG_CONSUL_PORT 8500
+ENV GLUU_CONFIG_CONSUL_CONSISTENCY stale
+ENV GLUU_CONFIG_CONSUL_SCHEME http
+ENV GLUU_CONFIG_CONSUL_VERIFY false
+ENV GLUU_CONFIG_CONSUL_CACERT_FILE /etc/certs/consul_ca.crt
+ENV GLUU_CONFIG_CONSUL_CERT_FILE /etc/certs/consul_client.crt
+ENV GLUU_CONFIG_CONSUL_KEY_FILE /etc/certs/consul_client.key
+ENV GLUU_CONFIG_CONSUL_TOKEN_FILE /etc/certs/consul_token
+ENV GLUU_CONFIG_KUBERNETES_NAMESPACE default
+ENV GLUU_CONFIG_KUBERNETES_CONFIGMAP gluu
+ENV GLUU_CONFIG_KUBERNETES_USE_KUBE_CONFIG false
+
+# ==========
+# Secret ENV
+# ==========
+
+ENV GLUU_SECRET_ADAPTER vault
+ENV GLUU_SECRET_VAULT_SCHEME http
+ENV GLUU_SECRET_VAULT_HOST localhost
+ENV GLUU_SECRET_VAULT_PORT 8200
+ENV GLUU_SECRET_VAULT_VERIFY false
+ENV GLUU_SECRET_VAULT_ROLE_ID_FILE /etc/certs/vault_role_id
+ENV GLUU_SECRET_VAULT_SECRET_ID_FILE /etc/certs/vault_secret_id
+ENV GLUU_SECRET_VAULT_CERT_FILE /etc/certs/vault_client.crt
+ENV GLUU_SECRET_VAULT_KEY_FILE /etc/certs/vault_client.key
+ENV GLUU_SECRET_VAULT_CACERT_FILE /etc/certs/vault_ca.crt
+ENV GLUU_SECRET_KUBERNETES_NAMESPACE default
+ENV GLUU_SECRET_KUBERNETES_SECRET gluu
+ENV GLUU_SECRET_KUBERNETES_USE_KUBE_CONFIG false
+
+# ===========
+# Generic ENV
+# ===========
+
+ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
+ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
+ENV GLUU_MAX_RAM_FRACTION 1
+ENV GLUU_WAIT_MAX_TIME 300
+ENV GLUU_WAIT_SLEEP_DURATION 5
 
 # ==========
 # misc stuff
@@ -88,31 +143,34 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /opt/shibboleth-idp/credentials \
     && mkdir -p /opt/shibboleth-idp/webapp \
     && mkdir -p /etc/certs \
-    && mkdir -p /etc/gluu/conf
+    && mkdir -p /etc/gluu/conf \
+    && mkdir -p /deploy \
+    && mkdir -p /opt/shared-shibboleth-idp
 
 COPY templates /opt/templates
 COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
-
-ENV GLUU_CONFIG_ADAPTER consul
-ENV GLUU_CONSUL_HOST localhost
-ENV GLUU_CONSUL_PORT 8500
-ENV GLUU_CONSUL_CONSISTENCY stale
-ENV GLUU_CONSUL_SCHEME http
-ENV GLUU_CONSUL_VERIFY false
-ENV GLUU_CONSUL_CACERT_FILE /etc/certs/consul_ca.crt
-ENV GLUU_CONSUL_CERT_FILE /etc/certs/consul_client.crt
-ENV GLUU_CONSUL_KEY_FILE /etc/certs/consul_client.key
-ENV GLUU_CONSUL_TOKEN_FILE /etc/certs/consul_token
-ENV GLUU_LDAP_URL localhost:1636
-ENV GLUU_KUBERNETES_NAMESPACE default
-ENV GLUU_KUBERNETES_CONFIGMAP gluu
-ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
-ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
-ENV GLUU_MAX_RAM_FRACTION 1
-
-VOLUME /opt/shared-shibboleth-idp
-
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
-ENTRYPOINT ["tini", "--"]
-CMD ["/opt/scripts/wait-for-it", "/opt/scripts/entrypoint.sh"]
+
+# # create jetty user
+# RUN useradd -ms /bin/sh --uid 1000 jetty \
+#     && usermod -a -G root jetty
+
+# # adjust ownership
+# RUN chown -R 1000:1000 /opt/gluu/jetty \
+#     && chown -R 1000:1000 /deploy \
+#     && chown -R 1000:1000 /opt/shared-shibboleth-idp \
+#     && chown -R 1000:1000 /opt/shibboleth-idp \
+#     && chmod -R g+w /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
+#     && chgrp -R 0 /opt/gluu/jetty && chmod -R g=u /opt/gluu/jetty \
+#     && chgrp -R 0 /opt/shared-shibboleth-idp && chmod -R g=u /opt/shared-shibboleth-idp \
+#     && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
+#     && chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
+#     && chgrp -R 0 /etc/gluu && chmod -R g=u /etc/gluu \
+#     && chgrp -R 0 /deploy && chmod -R g=u /deploy
+
+# # run as non-root user
+# USER 1000
+
+ENTRYPOINT ["tini", "-g", "--"]
+CMD ["/opt/scripts/entrypoint.sh"]
