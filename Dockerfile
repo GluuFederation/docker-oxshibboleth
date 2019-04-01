@@ -77,6 +77,13 @@ COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /tmp/requirements.txt
 
+# =======
+# License
+# =======
+
+RUN mkdir -p /licenses
+COPY LICENSE /licenses/
+
 # ==========
 # misc stuff
 # ==========
@@ -114,5 +121,6 @@ VOLUME /opt/shared-shibboleth-idp
 
 COPY scripts /opt/scripts
 RUN chmod +x /opt/scripts/entrypoint.sh
+RUN chmod +x /opt/scripts/license_checker.py
 ENTRYPOINT ["tini", "--"]
-CMD ["/opt/scripts/wait-for-it", "/opt/scripts/entrypoint.sh"]
+CMD ["/opt/scripts/license_checker.py", "/opt/scripts/wait-for-it", "/opt/scripts/entrypoint.sh"]
