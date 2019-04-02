@@ -116,6 +116,7 @@ ENV GLUU_KUBERNETES_CONFIGMAP gluu
 ENV GLUU_SHIB_SOURCE_DIR /opt/shared-shibboleth-idp
 ENV GLUU_SHIB_TARGET_DIR /opt/shibboleth-idp
 ENV GLUU_MAX_RAM_FRACTION 1
+ENV GLUU_AUTO_ACK_LICENSE false
 
 VOLUME /opt/shared-shibboleth-idp
 
