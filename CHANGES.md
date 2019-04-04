@@ -2,6 +2,12 @@
 
 Here you can see an overview of changes between each release.
 
+## Version 3.1.4_02
+
+Released on April 4th, 2019.
+
+* Added license info during container run.
+
 ## Version 3.1.4_01
 
 Released on November 12th, 2018.
