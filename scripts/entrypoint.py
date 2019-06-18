@@ -40,7 +40,7 @@ def render_idp3_templates():
         "orgName": manager.config.get("orgName"),
         "ldapCertFn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
         "couchbase_hostname": GLUU_COUCHBASE_URL,
-        "couchbaseShibUserPassword": "",
+        "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
     }
 
     for file_path in glob.glob("/app/templates/idp3/*.properties"):
@@ -347,7 +347,30 @@ def sync_couchbase_pkcs12():
 
 
 def saml_couchbase_settings():
-    pass
+    # Add couchbase bean to global.xml
+    global_xml_fn = "/opt/shibboleth-idp/conf/global.xml"
+    with open(global_xml_fn) as f:
+        global_xml = f.read()
+
+    with open("/app/static/couchbase_bean.xml") as f:
+        bean_xml = f.read()
+
+    with open(global_xml_fn, "w") as f:
+        global_xml.replace("</beans>", bean_xml + "\n\n</beans>")
+        f.write(global_xml)
+
+    # Add datasource.properties to idp.properties
+    idp_properties_fn = "/opt/shibboleth-idp/conf/idp.properties"
+    with open(idp_properties_fn) as f:
+        idp3_properties = f.readlines()
+
+    for i, l in enumerate(idp3_properties):
+        if l.strip().startswith('idp.additionalProperties'):
+            idp3_properties[i] = l.strip() + ', /conf/datasource.properties\n'
+
+    with open(idp_properties_fn, "w") as f:
+        new_idp3_props = ''.join(idp3_properties)
+        f.write(new_idp3_props)
 
 
 def create_couchbase_shib_user(cbm):
@@ -373,6 +396,7 @@ if __name__ == "__main__":
     sync_idp_jks()
     sync_sealer_jks()
 
+    render_idp3_templates()
     render_salt()
     render_gluu_properties()
 
@@ -386,10 +410,11 @@ if __name__ == "__main__":
         sync_couchbase_pkcs12()
         create_couchbase_shib_user()
 
+        if "user" in get_couchbase_mappings():
+            saml_couchbase_settings()
+
     if GLUU_PERSISTENCE_TYPE == "hybrid":
         render_hybrid_properties()
-
-    render_idp3_templates()
 
     render_ssl_cert()
     render_ssl_key()

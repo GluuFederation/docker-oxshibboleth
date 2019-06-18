@@ -139,18 +139,20 @@ ENV GLUU_WAIT_SLEEP_DURATION 5
 # ==========
 
 RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
-    && mkdir -p /opt/shibboleth-idp/logs \
-    && mkdir -p /opt/shibboleth-idp/lib \
-    && mkdir -p /opt/shibboleth-idp/conf/authn \
-    && mkdir -p /opt/shibboleth-idp/credentials \
-    && mkdir -p /opt/shibboleth-idp/webapp \
-    && mkdir -p /etc/certs \
-    && mkdir -p /etc/gluu/conf \
-    && mkdir -p /deploy \
-    && mkdir -p /opt/shared-shibboleth-idp \
-    && mkdir -p /app
+    /opt/shibboleth-idp/logs \
+    /opt/shibboleth-idp/lib \
+    /opt/shibboleth-idp/conf/authn \
+    /opt/shibboleth-idp/credentials \
+    /opt/shibboleth-idp/webapp \
+    /etc/certs \
+    /etc/gluu/conf \
+    /deploy \
+    /opt/shared-shibboleth-idp \
+    /app
 
-COPY static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
+# COPY static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
+COPY static /app/static
+RUN mv /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
 COPY templates /app/templates
 COPY scripts /app/scripts
 
