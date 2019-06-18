@@ -30,9 +30,9 @@ pull_shared_shib_files() {
 }
 
 if [ -f /etc/redhat-release ]; then
-    source scl_source enable ptyhon27 && python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+    source scl_source enable ptyhon27 && python /app/scripts/wait_for.py --deps="config,secret,ldap"
 else
-    python /opt/scripts/wait_for.py --deps="config,secret,ldap"
+    python /app/scripts/wait_for.py --deps="config,secret,ldap"
 fi
 
 if [ ! -f /deploy/touched ]; then
@@ -41,9 +41,9 @@ if [ ! -f /deploy/touched ]; then
         mv /touched /deploy/touched
     else
         if [ -f /etc/redhat-release ]; then
-            source scl_source enable ptyhon27 && python /opt/scripts/entrypoint.py
+            source scl_source enable ptyhon27 && python /app/scripts/entrypoint.py
         else
-            python /opt/scripts/entrypoint.py
+            python /app/scripts/entrypoint.py
         fi
 
         import_ssl_cert
@@ -53,7 +53,7 @@ if [ ! -f /deploy/touched ]; then
 fi
 
 # monitor filesystem changes in Shibboleth-related files
-sh /opt/scripts/shibwatcher.sh &
+sh /app/scripts/shibwatcher.sh &
 
 cd /opt/gluu/jetty/idp
 exec java -jar /opt/jetty/start.jar \

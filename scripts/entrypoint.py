@@ -8,8 +8,12 @@ import subprocess
 import pyDes
 
 from gluulib import get_manager
+from cbm import CBM
 
 GLUU_LDAP_URL = os.environ.get("GLUU_LDAP_URL", "localhost:1636")
+GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
+GLUU_PERSISTENCE_TYPE = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+GLUU_PERSISTENCE_LDAP_MAPPING = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
 
 manager = get_manager()
 
@@ -21,7 +25,7 @@ def safe_render(text, ctx):
     return text % ctx
 
 
-def render_templates():
+def render_idp3_templates():
     ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
     ctx = {
         "hostname": manager.config.get("hostname"),
@@ -35,16 +39,18 @@ def render_templates():
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
         "ldapCertFn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
+        "couchbase_hostname": GLUU_COUCHBASE_URL,
+        "couchbaseShibUserPassword": "",
     }
 
-    for file_path in glob.glob("/opt/templates/*.properties"):
+    for file_path in glob.glob("/app/templates/idp3/*.properties"):
         with open(file_path) as fr:
             rendered_content = safe_render(fr.read(), ctx)
             fn = os.path.basename(file_path)
             with open("/opt/shibboleth-idp/conf/{}".format(fn), 'w') as fw:
                 fw.write(rendered_content)
 
-    file_path = "/opt/templates/idp-metadata.xml"
+    file_path = "/app/templates/idp3/idp-metadata.xml"
     with open(file_path) as fr:
         rendered_content = safe_render(fr.read(), ctx)
         fn = os.path.basename(file_path)
@@ -97,7 +103,7 @@ def sync_idp_keys():
 def render_salt():
     encode_salt = manager.secret.get("encoded_salt")
 
-    with open("/opt/templates/salt.tmpl") as fr:
+    with open("/app/templates/salt.tmpl") as fr:
         txt = fr.read()
         with open("/etc/gluu/conf/salt", "w") as fw:
             rendered_txt = txt % {"encode_salt": encode_salt}
@@ -105,18 +111,135 @@ def render_salt():
 
 
 def render_ldap_properties():
-    with open("/opt/templates/gluu-ldap.properties.tmpl") as fr:
+    with open("/app/templates/gluu-ldap.properties.tmpl") as fr:
         txt = fr.read()
+
+        ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
 
         with open("/etc/gluu/conf/gluu-ldap.properties", "w") as fw:
             rendered_txt = txt % {
                 "ldap_binddn": manager.config.get("ldap_binddn"),
                 "encoded_ox_ldap_pw": manager.secret.get("encoded_ox_ldap_pw"),
-                "ldap_url": GLUU_LDAP_URL,
+                "ldap_hostname": ldap_hostname,
+                "ldaps_port": ldaps_port,
                 "ldapTrustStoreFn": manager.config.get("ldapTrustStoreFn"),
                 "encoded_ldapTrustStorePass": manager.secret.get("encoded_ldapTrustStorePass"),
+            }
+            fw.write(rendered_txt)
+
+
+def get_couchbase_mappings():
+    mappings = {
+        "default": {
+            "bucket": "gluu",
+            "alias": "",
+        },
+        "user": {
+            "bucket": "gluu_user",
+            "alias": "people, groups"
+        },
+        "cache": {
+            "bucket": "gluu_cache",
+            "alias": "cache",
+        },
+        "statistic": {
+            "bucket": "gluu_statistic",
+            "alias": "statistic",
+        },
+        "site": {
+            "bucket": "gluu_site",
+            "alias": "site",
+        }
+    }
+
+    if GLUU_PERSISTENCE_TYPE == "hybrid":
+        mappings = {
+            name: mapping for name, mapping in mappings.iteritems()
+            if name != GLUU_PERSISTENCE_LDAP_MAPPING
+        }
+
+    return mappings
+
+
+def render_couchbase_properties():
+    _couchbase_mappings = get_couchbase_mappings()
+    couchbase_buckets = []
+    couchbase_mappings = []
+
+    for _, mapping in _couchbase_mappings.iteritems():
+        couchbase_buckets.append(mapping["bucket"])
+
+        if not mapping["alias"]:
+            continue
+
+        couchbase_mappings.append("bucket.{0}.mapping: {1}".format(
+            mapping["bucket"], mapping["alias"],
+        ))
+
+    # always have `gluu` as default bucket
+    if "gluu" not in couchbase_buckets:
+        couchbase_buckets.insert(0, "gluu")
+
+    with open("/app/templates/gluu-couchbase.properties.tmpl") as fr:
+        txt = fr.read()
+
+        ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
+
+        with open("/etc/gluu/conf/gluu-couchbase.properties", "w") as fw:
+            rendered_txt = txt % {
+                "hostname": GLUU_COUCHBASE_URL,
+                "couchbase_server_user": manager.config.get("couchbase_server_user"),
+                "encoded_couchbase_server_pw": manager.secret.get("encoded_couchbase_server_pw"),
+                "couchbase_buckets": ", ".join(couchbase_buckets),
+                "default_bucket": "gluu",
+                "couchbase_mappings": "\n".join(couchbase_mappings),
+                "encryption_method": "SSHA-256",
+                "ssl_enabled": "true",
+                "couchbaseTrustStoreFn": manager.config.get("couchbaseTrustStoreFn"),
+                "encoded_couchbaseTrustStorePass": manager.secret.get("encoded_couchbaseTrustStorePass"),
+            }
+            fw.write(rendered_txt)
+
+
+def render_hybrid_properties():
+    _couchbase_mappings = get_couchbase_mappings()
+
+    ldap_mapping = GLUU_PERSISTENCE_LDAP_MAPPING
+
+    if GLUU_PERSISTENCE_LDAP_MAPPING == "default":
+        default_storage = "ldap"
+    else:
+        default_storage = "couchbase"
+
+    couchbase_mappings = [
+        mapping["alias"] for name, mapping in _couchbase_mappings.iteritems()
+        if name != ldap_mapping
+    ]
+
+    out = [
+        "storages: ldap, couchbase",
+        "storage.default: {}".format(default_storage),
+        "storage.ldap.mapping: {}".format(ldap_mapping),
+        "storage.couchbase.mapping: {}".format(
+            ", ".join(filter(None, couchbase_mappings))
+        ),
+    ]
+
+    with open("/etc/gluu/conf/gluu-hybrid.properties", "w") as fw:
+        fw.write("\n".join(out))
+
+
+def render_gluu_properties():
+    with open("/app/templates/gluu.properties.tmpl") as fr:
+        txt = fr.read()
+
+        ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
+
+        with open("/etc/gluu/conf/gluu.properties", "w") as fw:
+            rendered_txt = txt % {
                 "gluuOptPythonFolder": "/opt/gluu/python",
                 "certFolder": "/etc/certs",
+                "persistence_type": GLUU_PERSISTENCE_TYPE,
             }
             fw.write(rendered_txt)
 
@@ -216,17 +339,60 @@ def modify_webdefault_xml():
         f.write(updates)
 
 
+def sync_couchbase_pkcs12():
+    with open(manager.config.get("couchbaseTrustStoreFn"), "wb") as fw:
+        encoded_pkcs = manager.secret.get("couchbase_pkcs12_base64")
+        pkcs = decrypt_text(encoded_pkcs, manager.secret.get("encoded_salt"))
+        fw.write(pkcs)
+
+
+def saml_couchbase_settings():
+    pass
+
+
+def create_couchbase_shib_user(cbm):
+    hostname = GLUU_COUCHBASE_URL
+    user = manager.config.get("couchbase_server_user")
+    password = decrypt_text(
+        manager.secret.get("encoded_couchbase_server_pw"),
+        manager.secret.get("encoded_salt")
+    )
+    cbm = CBM(hostname, user, password)
+
+    cbm.create_user(
+        'couchbaseShibUser',
+        manager.secret.get("couchbase_shib_user_password"),
+        'Shibboleth IDP',
+        'query_select[*]',
+    )
+
+
 if __name__ == "__main__":
     sync_idp_certs()
     sync_idp_keys()
     sync_idp_jks()
-    render_templates()
     sync_sealer_jks()
+
     render_salt()
-    render_ldap_properties()
-    sync_ldap_pkcs12()
-    sync_ldap_cert()
+    render_gluu_properties()
+
+    if GLUU_PERSISTENCE_TYPE in ("ldap", "hybrid"):
+        render_ldap_properties()
+        sync_ldap_cert()
+        sync_ldap_pkcs12()
+
+    if GLUU_PERSISTENCE_TYPE in ("couchbase", "hybrid"):
+        render_couchbase_properties()
+        sync_couchbase_pkcs12()
+        create_couchbase_shib_user()
+
+    if GLUU_PERSISTENCE_TYPE == "hybrid":
+        render_hybrid_properties()
+
+    render_idp3_templates()
+
     render_ssl_cert()
     render_ssl_key()
+
     modify_jetty_xml()
     modify_webdefault_xml()

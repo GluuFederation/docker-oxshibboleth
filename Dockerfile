@@ -41,7 +41,7 @@ EXPOSE 8080
 # ============
 
 ENV OX_VERSION 4.0.0-SNAPSHOT
-ENV OX_BUILD_DATE 2019-04-25
+ENV OX_BUILD_DATE 2019-05-31
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -147,12 +147,12 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     && mkdir -p /etc/certs \
     && mkdir -p /etc/gluu/conf \
     && mkdir -p /deploy \
-    && mkdir -p /opt/shared-shibboleth-idp
+    && mkdir -p /opt/shared-shibboleth-idp \
+    && mkdir -p /app
 
-COPY templates /opt/templates
-COPY static/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
-COPY scripts /opt/scripts
-RUN chmod +x /opt/scripts/entrypoint.sh
+COPY static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
+COPY templates /app/templates
+COPY scripts /app/scripts
 
 # # create jetty user
 # RUN useradd -ms /bin/sh --uid 1000 jetty \
@@ -175,4 +175,4 @@ RUN chmod +x /opt/scripts/entrypoint.sh
 # USER 1000
 
 ENTRYPOINT ["tini", "-g", "--"]
-CMD ["/opt/scripts/entrypoint.sh"]
+CMD ["sh", "/app/scripts/entrypoint.sh"]
