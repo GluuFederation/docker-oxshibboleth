@@ -40,8 +40,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION 3.1.6.Final
-ENV OX_BUILD_DATE 2019-03-22
+ENV OX_VERSION 3.1.6.sp1
+ENV OX_BUILD_DATE 2019-05-09
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
