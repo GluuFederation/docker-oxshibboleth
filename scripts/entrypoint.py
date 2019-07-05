@@ -356,7 +356,7 @@ def saml_couchbase_settings():
         bean_xml = f.read()
 
     with open(global_xml_fn, "w") as f:
-        global_xml.replace("</beans>", bean_xml + "\n\n</beans>")
+        global_xml = global_xml.replace("</beans>", bean_xml + "\n\n</beans>")
         f.write(global_xml)
 
     # Add datasource.properties to idp.properties
@@ -373,7 +373,7 @@ def saml_couchbase_settings():
         f.write(new_idp3_props)
 
 
-def create_couchbase_shib_user(cbm):
+def create_couchbase_shib_user():
     hostname = GLUU_COUCHBASE_URL
     user = manager.config.get("couchbase_server_user")
     password = decrypt_text(
