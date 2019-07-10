@@ -289,12 +289,63 @@ def render_ssl_key():
             fd.write(ssl_key)
 
 
-def sync_sealer_jks():
-    jks = decrypt_text(manager.secret.get("sealer_jks_base64"),
-                       manager.secret.get("encoded_salt"))
+def encrypt_text(text, key):
+    cipher = pyDes.triple_des(b"{}".format(key), pyDes.ECB,
+                              padmode=pyDes.PAD_PKCS5)
+    encrypted_text = cipher.encrypt(b"{}".format(text))
+    return base64.b64encode(encrypted_text)
 
-    with open("/opt/shibboleth-idp/credentials/sealer.jks", "wb") as fw:
-        fw.write(jks)
+
+def as_boolean(val, default=False):
+    truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+    falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, False))
+
+    if val in truthy:
+        return True
+    if val in falsy:
+        return False
+    return default
+
+
+def generate_idp3_sealer():
+    lib = "'/opt/gluu/jetty/idp/webapps/idp/WEB-INF/lib/*' " \
+          "net.shibboleth.utilities.java.support.security.BasicKeystoreKeyStrategyTool"
+    cmd = " ".join([
+        "java",
+        "-classpath {} ".format(lib),
+        "--storefile /opt/shibboleth-idp/credentials/sealer.jks ",
+        "--versionfile /opt/shibboleth-idp/credentials/sealer.kver ",
+        "--alias secret ",
+        "--storepass {}".format(manager.secret.get("shibJksPass")),
+    ])
+    return exec_cmd(cmd)
+
+
+def sync_sealer():
+    jks_fn = "/opt/shibboleth-idp/credentials/sealer.jks"
+    kver_fn = "/opt/shibboleth-idp/credentials/sealer.kver"
+    salt = manager.secret.get("encoded_salt")
+
+    if not as_boolean(manager.config.get("sealer_generated", False)):
+        # create sealer.jks and sealer.kver
+        generate_idp3_sealer()
+
+        with open(jks_fn) as f:
+            manager.secret.set("sealer_jks_base64", encrypt_text(f.read(), salt))
+
+        with open(kver_fn) as f:
+            manager.secret.set("sealer_kver_base64", encrypt_text(f.read(), salt))
+
+        manager.config.set("sealer_generated", True)
+        return
+
+    with open(jks_fn, "wb") as f:
+        jks = decrypt_text(manager.secret.get("sealer_jks_base64"), salt)
+        f.write(jks)
+
+    with open(kver_fn, "wb") as f:
+        kver = decrypt_text(manager.secret.get("sealer_kver_base64"), salt)
+        f.write(kver)
 
 
 def modify_jetty_xml():
@@ -394,7 +445,7 @@ if __name__ == "__main__":
     sync_idp_certs()
     sync_idp_keys()
     sync_idp_jks()
-    sync_sealer_jks()
+    sync_sealer()
 
     render_idp3_templates()
     render_salt()
