@@ -41,7 +41,7 @@ EXPOSE 8080
 # ============
 
 ENV OX_VERSION 4.0.0-SNAPSHOT
-ENV OX_BUILD_DATE 2019-05-31
+ENV OX_BUILD_DATE 2019-07-10
 
 # the LABEL defined before downloading ox war/jar files to make sure
 # it gets the latest build for specific version
@@ -123,6 +123,18 @@ ENV GLUU_SECRET_VAULT_CACERT_FILE /etc/certs/vault_ca.crt
 ENV GLUU_SECRET_KUBERNETES_NAMESPACE default
 ENV GLUU_SECRET_KUBERNETES_SECRET gluu
 ENV GLUU_SECRET_KUBERNETES_USE_KUBE_CONFIG false
+
+# ===============
+# Persistence ENV
+# ===============
+
+# available options: couchbase, ldap, hybrid
+ENV GLUU_PERSISTENCE_TYPE ldap
+# only takes affect when GLUU_PERSISTENCE_TYPE is hybrid
+# available options: default, user, cache, site, statistic
+ENV GLUU_PERSISTENCE_LDAP_MAPPING default
+ENV GLUU_COUCHBASE_URL localhost
+ENV GLUU_LDAP_URL localhost:1636
 
 # ===========
 # Generic ENV
