@@ -5,7 +5,6 @@ import re
 from pygluu.containerlib import get_manager
 from pygluu.containerlib.utils import as_boolean
 from pygluu.containerlib.utils import decode_text
-from pygluu.containerlib.utils import encode_text
 from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
 
@@ -16,10 +15,8 @@ GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
 GLUU_PERSISTENCE_TYPE = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
 GLUU_PERSISTENCE_LDAP_MAPPING = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
 
-manager = get_manager()
 
-
-def render_idp3_templates():
+def render_idp3_templates(manager):
     ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
     ctx = {
         "hostname": manager.config.get("hostname"),
@@ -32,7 +29,7 @@ def render_idp3_templates():
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
-        "ldapCertFn": "/etc/certs/{}.crt".format(manager.config.get("ldap_type")),
+        "ldapCertFn": "/etc/certs/opendj.crt",
         "couchbase_hostname": GLUU_COUCHBASE_URL,
         "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
     }
@@ -58,27 +55,17 @@ def load_cert_text(path):
         return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').strip()
 
 
-def sync_idp_certs():
-    cert = manager.secret.get("idp3SigningCertificateText")
-    with open("/etc/certs/idp-signing.crt", "w") as f:
-        f.write(cert)
-
-    cert = manager.secret.get("idp3EncryptionCertificateText")
-    with open("/etc/certs/idp-encryption.crt", "w") as f:
-        f.write(cert)
+def sync_idp_certs(manager):
+    manager.secret.to_file("idp3SigningCertificateText", "/etc/certs/idp-signing.crt")
+    manager.secret.to_file("idp3EncryptionCertificateText", "/etc/certs/idp-encryption.crt")
 
 
-def sync_idp_keys():
-    key = manager.secret.get("idp3SigningKeyText")
-    with open("/etc/certs/idp-signing.key", "w") as f:
-        f.write(key)
-
-    key = manager.secret.get("idp3EncryptionKeyText")
-    with open("/etc/certs/idp-encryption.key", "w") as f:
-        f.write(key)
+def sync_idp_keys(manager):
+    manager.secret.to_file("idp3SigningKeyText", "/etc/certs/idp-signing.key")
+    manager.secret.to_file("idp3EncryptionKeyText", "/etc/certs/idp-encryption.key")
 
 
-def render_salt():
+def render_salt(manager):
     encode_salt = manager.secret.get("encoded_salt")
 
     with open("/app/templates/salt.tmpl") as fr:
@@ -88,7 +75,7 @@ def render_salt():
             fw.write(rendered_txt)
 
 
-def render_ldap_properties():
+def render_ldap_properties(manager):
     with open("/app/templates/gluu-ldap.properties.tmpl") as fr:
         txt = fr.read()
 
@@ -139,7 +126,7 @@ def get_couchbase_mappings():
     return mappings
 
 
-def render_couchbase_properties():
+def render_couchbase_properties(manager):
     _couchbase_mappings = get_couchbase_mappings()
     couchbase_buckets = []
     couchbase_mappings = []
@@ -222,45 +209,29 @@ def render_gluu_properties():
             fw.write(rendered_txt)
 
 
-def sync_ldap_pkcs12():
-    pkcs = decode_text(manager.secret.get("ldap_pkcs12_base64"),
-                       manager.secret.get("encoded_salt"))
-
-    with open(manager.config.get("ldapTrustStoreFn"), "wb") as fw:
-        fw.write(pkcs)
+def sync_ldap_pkcs12(manager):
+    dest = manager.config.get("ldapTrustStoreFn")
+    manager.secret.to_file("ldap_pkcs12_base64", dest, decode=True, binary_mode=True)
 
 
-def sync_ldap_cert():
-    cert = decode_text(manager.secret.get("ldap_ssl_cert"),
-                       manager.secret.get("encoded_salt"))
-
-    with open("/etc/certs/{}.crt".format(manager.config.get("ldap_type")), "wb") as fw:
-        fw.write(cert)
+def sync_ldap_cert(manager):
+    manager.secret.to_file("ldap_ssl_cert", "/etc/certs/opendj.crt", decode=True)
 
 
-def sync_idp_jks():
-    jks = decode_text(manager.secret.get("shibIDP_jks_base64"),
-                      manager.secret.get("encoded_salt"))
-
-    with open("/etc/certs/shibIDP.jks", "wb") as fw:
-        fw.write(jks)
+def sync_idp_jks(manager):
+    manager.secret.to_file("shibIDP_jks_base64", "/etc/certs/shibIDP.jks",
+                           decode=True, binary_mode=True)
 
 
-def render_ssl_cert():
-    ssl_cert = manager.secret.get("ssl_cert")
-    if ssl_cert:
-        with open("/etc/certs/gluu_https.crt", "w") as fd:
-            fd.write(ssl_cert)
+def render_ssl_cert(manager):
+    manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
 
 
-def render_ssl_key():
-    ssl_key = manager.secret.get("ssl_key")
-    if ssl_key:
-        with open("/etc/certs/gluu_https.key", "w") as fd:
-            fd.write(ssl_key)
+def render_ssl_key(manager):
+    manager.secret.to_file("ssl_key", "/etc/certs/gluu_https.key")
 
 
-def generate_idp3_sealer():
+def generate_idp3_sealer(manager):
     lib = "'/opt/gluu/jetty/idp/webapps/idp/WEB-INF/lib/*' " \
           "net.shibboleth.utilities.java.support.security.BasicKeystoreKeyStrategyTool"
     cmd = " ".join([
@@ -274,31 +245,20 @@ def generate_idp3_sealer():
     return exec_cmd(cmd)
 
 
-def sync_sealer():
+def sync_sealer(manager):
     jks_fn = "/opt/shibboleth-idp/credentials/sealer.jks"
     kver_fn = "/opt/shibboleth-idp/credentials/sealer.kver"
-    salt = manager.secret.get("encoded_salt")
 
     if not as_boolean(manager.config.get("sealer_generated", False)):
         # create sealer.jks and sealer.kver
-        generate_idp3_sealer()
-
-        with open(jks_fn) as f:
-            manager.secret.set("sealer_jks_base64", encode_text(f.read(), salt))
-
-        with open(kver_fn) as f:
-            manager.secret.set("sealer_kver_base64", encode_text(f.read(), salt))
-
+        generate_idp3_sealer(manager)
+        manager.secret.from_file("sealer_jks_base64", jks_fn, encode=True, binary_mode=True)
+        manager.secret.from_file("sealer_kver_base64", kver_fn, encode=True, binary_mode=True)
         manager.config.set("sealer_generated", True)
         return
 
-    with open(jks_fn, "wb") as f:
-        jks = decode_text(manager.secret.get("sealer_jks_base64"), salt)
-        f.write(jks)
-
-    with open(kver_fn, "wb") as f:
-        kver = decode_text(manager.secret.get("sealer_kver_base64"), salt)
-        f.write(kver)
+    manager.secret.to_file("sealer_jks_base64", jks_fn, decode=True, binary_mode=True)
+    manager.secret.to_file("sealer_kver_base64", kver_fn, decode=True, binary_mode=True)
 
 
 def modify_jetty_xml():
@@ -343,11 +303,9 @@ def modify_webdefault_xml():
         f.write(updates)
 
 
-def sync_couchbase_pkcs12():
-    with open(manager.config.get("couchbaseTrustStoreFn"), "wb") as fw:
-        encoded_pkcs = manager.secret.get("couchbase_pkcs12_base64")
-        pkcs = decode_text(encoded_pkcs, manager.secret.get("encoded_salt"))
-        fw.write(pkcs)
+def sync_couchbase_pkcs12(manager):
+    dest = manager.config.get("couchbaseTrustStoreFn")
+    manager.secret.to_file("couchbase_pkcs12_base64", dest, decode=True, binary_mode=True)
 
 
 def saml_couchbase_settings():
@@ -377,7 +335,7 @@ def saml_couchbase_settings():
         f.write(new_idp3_props)
 
 
-def create_couchbase_shib_user():
+def create_couchbase_shib_user(manager):
     hostname = GLUU_COUCHBASE_URL
     user = manager.config.get("couchbase_server_user")
     password = decode_text(
@@ -394,25 +352,27 @@ def create_couchbase_shib_user():
     )
 
 
-if __name__ == "__main__":
-    sync_idp_certs()
-    sync_idp_keys()
-    sync_idp_jks()
-    sync_sealer()
+def main():
+    manager = get_manager()
 
-    render_idp3_templates()
-    render_salt()
+    sync_idp_certs(manager)
+    sync_idp_keys(manager)
+    sync_idp_jks(manager)
+    sync_sealer(manager)
+
+    render_idp3_templates(manager)
+    render_salt(manager)
     render_gluu_properties()
 
     if GLUU_PERSISTENCE_TYPE in ("ldap", "hybrid"):
-        render_ldap_properties()
-        sync_ldap_cert()
-        sync_ldap_pkcs12()
+        render_ldap_properties(manager)
+        sync_ldap_cert(manager)
+        sync_ldap_pkcs12(manager)
 
     if GLUU_PERSISTENCE_TYPE in ("couchbase", "hybrid"):
-        render_couchbase_properties()
-        sync_couchbase_pkcs12()
-        create_couchbase_shib_user()
+        render_couchbase_properties(manager)
+        sync_couchbase_pkcs12(manager)
+        create_couchbase_shib_user(manager)
 
         if "user" in get_couchbase_mappings():
             saml_couchbase_settings()
@@ -420,8 +380,12 @@ if __name__ == "__main__":
     if GLUU_PERSISTENCE_TYPE == "hybrid":
         render_hybrid_properties()
 
-    render_ssl_cert()
-    render_ssl_key()
+    render_ssl_cert(manager)
+    render_ssl_key(manager)
 
     modify_jetty_xml()
     modify_webdefault_xml()
+
+
+if __name__ == "__main__":
+    main()
