@@ -12,7 +12,8 @@ RUN apk update && apk add --no-cache \
     py-pip \
     inotify-tools \
     openssl \
-    shadow
+    shadow \
+    git
 
 # =====
 # Jetty

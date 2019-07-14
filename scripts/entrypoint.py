@@ -1,13 +1,14 @@
-import base64
 import glob
 import os
 import re
-import shlex
-import subprocess
 
-import pyDes
+from pygluu.containerlib import get_manager
+from pygluu.containerlib.utils import as_boolean
+from pygluu.containerlib.utils import decode_text
+from pygluu.containerlib.utils import encode_text
+from pygluu.containerlib.utils import exec_cmd
+from pygluu.containerlib.utils import safe_render
 
-from gluulib import get_manager
 from cbm import CBM
 
 GLUU_LDAP_URL = os.environ.get("GLUU_LDAP_URL", "localhost:1636")
@@ -16,13 +17,6 @@ GLUU_PERSISTENCE_TYPE = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
 GLUU_PERSISTENCE_LDAP_MAPPING = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
 
 manager = get_manager()
-
-
-def safe_render(text, ctx):
-    text = re.sub(r"%([^\(])", r"%%\1", text)
-    # There was a % at the end?
-    text = re.sub(r"%$", r"%%", text)
-    return text % ctx
 
 
 def render_idp3_templates():
@@ -34,7 +28,7 @@ def render_idp3_templates():
         "ldap_hostname": ldap_hostname,
         "ldaps_port": ldaps_port,
         "ldap_binddn": manager.config.get("ldap_binddn"),
-        "ldapPass": decrypt_text(manager.secret.get("encoded_ox_ldap_pw"), manager.secret.get("encoded_salt")),
+        "ldapPass": decode_text(manager.secret.get("encoded_ox_ldap_pw"), manager.secret.get("encoded_salt")),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
@@ -56,22 +50,6 @@ def render_idp3_templates():
         fn = os.path.basename(file_path)
         with open("/opt/shibboleth-idp/metadata/{}".format(fn), 'w') as fw:
             fw.write(rendered_content)
-
-
-def exec_cmd(cmd):
-    """Executes shell command.
-    :param cmd: String of shell command.
-    :returns: A tuple consists of stdout, stderr, and return code
-              returned from shell command execution.
-    """
-    args = shlex.split(cmd)
-    popen = subprocess.Popen(args,
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-    stdout, stderr = popen.communicate()
-    retcode = popen.returncode
-    return stdout, stderr, retcode
 
 
 def load_cert_text(path):
@@ -244,32 +222,25 @@ def render_gluu_properties():
             fw.write(rendered_txt)
 
 
-def decrypt_text(encrypted_text, key):
-    cipher = pyDes.triple_des(b"{}".format(key), pyDes.ECB,
-                              padmode=pyDes.PAD_PKCS5)
-    encrypted_text = b"{}".format(base64.b64decode(encrypted_text))
-    return cipher.decrypt(encrypted_text)
-
-
 def sync_ldap_pkcs12():
-    pkcs = decrypt_text(manager.secret.get("ldap_pkcs12_base64"),
-                        manager.secret.get("encoded_salt"))
+    pkcs = decode_text(manager.secret.get("ldap_pkcs12_base64"),
+                       manager.secret.get("encoded_salt"))
 
     with open(manager.config.get("ldapTrustStoreFn"), "wb") as fw:
         fw.write(pkcs)
 
 
 def sync_ldap_cert():
-    cert = decrypt_text(manager.secret.get("ldap_ssl_cert"),
-                        manager.secret.get("encoded_salt"))
+    cert = decode_text(manager.secret.get("ldap_ssl_cert"),
+                       manager.secret.get("encoded_salt"))
 
     with open("/etc/certs/{}.crt".format(manager.config.get("ldap_type")), "wb") as fw:
         fw.write(cert)
 
 
 def sync_idp_jks():
-    jks = decrypt_text(manager.secret.get("shibIDP_jks_base64"),
-                       manager.secret.get("encoded_salt"))
+    jks = decode_text(manager.secret.get("shibIDP_jks_base64"),
+                      manager.secret.get("encoded_salt"))
 
     with open("/etc/certs/shibIDP.jks", "wb") as fw:
         fw.write(jks)
@@ -287,24 +258,6 @@ def render_ssl_key():
     if ssl_key:
         with open("/etc/certs/gluu_https.key", "w") as fd:
             fd.write(ssl_key)
-
-
-def encrypt_text(text, key):
-    cipher = pyDes.triple_des(b"{}".format(key), pyDes.ECB,
-                              padmode=pyDes.PAD_PKCS5)
-    encrypted_text = cipher.encrypt(b"{}".format(text))
-    return base64.b64encode(encrypted_text)
-
-
-def as_boolean(val, default=False):
-    truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
-    falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, False))
-
-    if val in truthy:
-        return True
-    if val in falsy:
-        return False
-    return default
 
 
 def generate_idp3_sealer():
@@ -331,20 +284,20 @@ def sync_sealer():
         generate_idp3_sealer()
 
         with open(jks_fn) as f:
-            manager.secret.set("sealer_jks_base64", encrypt_text(f.read(), salt))
+            manager.secret.set("sealer_jks_base64", encode_text(f.read(), salt))
 
         with open(kver_fn) as f:
-            manager.secret.set("sealer_kver_base64", encrypt_text(f.read(), salt))
+            manager.secret.set("sealer_kver_base64", encode_text(f.read(), salt))
 
         manager.config.set("sealer_generated", True)
         return
 
     with open(jks_fn, "wb") as f:
-        jks = decrypt_text(manager.secret.get("sealer_jks_base64"), salt)
+        jks = decode_text(manager.secret.get("sealer_jks_base64"), salt)
         f.write(jks)
 
     with open(kver_fn, "wb") as f:
-        kver = decrypt_text(manager.secret.get("sealer_kver_base64"), salt)
+        kver = decode_text(manager.secret.get("sealer_kver_base64"), salt)
         f.write(kver)
 
 
@@ -393,7 +346,7 @@ def modify_webdefault_xml():
 def sync_couchbase_pkcs12():
     with open(manager.config.get("couchbaseTrustStoreFn"), "wb") as fw:
         encoded_pkcs = manager.secret.get("couchbase_pkcs12_base64")
-        pkcs = decrypt_text(encoded_pkcs, manager.secret.get("encoded_salt"))
+        pkcs = decode_text(encoded_pkcs, manager.secret.get("encoded_salt"))
         fw.write(pkcs)
 
 
@@ -427,7 +380,7 @@ def saml_couchbase_settings():
 def create_couchbase_shib_user():
     hostname = GLUU_COUCHBASE_URL
     user = manager.config.get("couchbase_server_user")
-    password = decrypt_text(
+    password = decode_text(
         manager.secret.get("encoded_couchbase_server_pw"),
         manager.secret.get("encoded_salt")
     )

@@ -69,9 +69,9 @@ else
 fi
 
 if [ -f /etc/redhat-release ]; then
-    source scl_source enable python27 && python /app/scripts/wait_for.py --deps="$deps"
+    source scl_source enable python27 && gluu-wait --deps="$deps"
 else
-    python /app/scripts/wait_for.py --deps="$deps"
+    gluu-wait --deps="$deps"
 fi
 
 if [ ! -f /deploy/touched ]; then
