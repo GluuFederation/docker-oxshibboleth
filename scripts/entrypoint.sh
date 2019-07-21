@@ -50,10 +50,10 @@ esac
 # check mapping used by LDAP
 if [ "${GLUU_PERSISTENCE_TYPE}" = "hybrid" ]; then
     case "${GLUU_PERSISTENCE_LDAP_MAPPING}" in
-        default|user|cache|site|statistic)
+        default|user|cache|site|statistic|authorization)
             ;;
         *)
-            echo "unsupported GLUU_PERSISTENCE_LDAP_MAPPING value; please choose 'default', 'user', 'cache', 'site', or 'statistic'"
+            echo "unsupported GLUU_PERSISTENCE_LDAP_MAPPING value; please choose 'default', 'user', 'cache', 'site', 'statistic', or 'authorization'"
             exit 1
             ;;
     esac
@@ -98,8 +98,7 @@ cd /opt/gluu/jetty/idp
 exec java -jar /opt/jetty/start.jar \
     -server \
     -XX:+DisableExplicitGC \
-    -XX:+UnlockExperimentalVMOptions \
-    -XX:+UseCGroupMemoryLimitForHeap \
-    -XX:MaxRAMFraction=$GLUU_MAX_RAM_FRACTION \
+    -XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=$GLUU_MAX_RAM_PERCENTAGE \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp

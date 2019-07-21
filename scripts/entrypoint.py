@@ -55,16 +55,6 @@ def load_cert_text(path):
         return cert.replace('-----BEGIN CERTIFICATE-----', '').replace('-----END CERTIFICATE-----', '').strip()
 
 
-def sync_idp_certs(manager):
-    manager.secret.to_file("idp3SigningCertificateText", "/etc/certs/idp-signing.crt")
-    manager.secret.to_file("idp3EncryptionCertificateText", "/etc/certs/idp-encryption.crt")
-
-
-def sync_idp_keys(manager):
-    manager.secret.to_file("idp3SigningKeyText", "/etc/certs/idp-signing.key")
-    manager.secret.to_file("idp3EncryptionKeyText", "/etc/certs/idp-encryption.key")
-
-
 def render_salt(manager):
     encode_salt = manager.secret.get("encoded_salt")
 
@@ -114,7 +104,11 @@ def get_couchbase_mappings():
         "site": {
             "bucket": "gluu_site",
             "alias": "site",
-        }
+        },
+        "authorization": {
+            "bucket": "gluu_authorization",
+            "alias": "authorizations",
+        },
     }
 
     if GLUU_PERSISTENCE_TYPE == "hybrid":
@@ -209,28 +203,6 @@ def render_gluu_properties():
             fw.write(rendered_txt)
 
 
-def sync_ldap_pkcs12(manager):
-    dest = manager.config.get("ldapTrustStoreFn")
-    manager.secret.to_file("ldap_pkcs12_base64", dest, decode=True, binary_mode=True)
-
-
-def sync_ldap_cert(manager):
-    manager.secret.to_file("ldap_ssl_cert", "/etc/certs/opendj.crt", decode=True)
-
-
-def sync_idp_jks(manager):
-    manager.secret.to_file("shibIDP_jks_base64", "/etc/certs/shibIDP.jks",
-                           decode=True, binary_mode=True)
-
-
-def render_ssl_cert(manager):
-    manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
-
-
-def render_ssl_key(manager):
-    manager.secret.to_file("ssl_key", "/etc/certs/gluu_https.key")
-
-
 def generate_idp3_sealer(manager):
     lib = "'/opt/gluu/jetty/idp/webapps/idp/WEB-INF/lib/*' " \
           "net.shibboleth.utilities.java.support.security.BasicKeystoreKeyStrategyTool"
@@ -303,11 +275,6 @@ def modify_webdefault_xml():
         f.write(updates)
 
 
-def sync_couchbase_pkcs12(manager):
-    dest = manager.config.get("couchbaseTrustStoreFn")
-    manager.secret.to_file("couchbase_pkcs12_base64", dest, decode=True, binary_mode=True)
-
-
 def saml_couchbase_settings():
     # Add couchbase bean to global.xml
     global_xml_fn = "/opt/shibboleth-idp/conf/global.xml"
@@ -355,9 +322,12 @@ def create_couchbase_shib_user(manager):
 def main():
     manager = get_manager()
 
-    sync_idp_certs(manager)
-    sync_idp_keys(manager)
-    sync_idp_jks(manager)
+    manager.secret.to_file("idp3SigningCertificateText", "/etc/certs/idp-signing.crt")
+    manager.secret.to_file("idp3EncryptionCertificateText", "/etc/certs/idp-encryption.crt")
+    manager.secret.to_file("idp3SigningKeyText", "/etc/certs/idp-signing.key")
+    manager.secret.to_file("idp3EncryptionKeyText", "/etc/certs/idp-encryption.key")
+    manager.secret.to_file("shibIDP_jks_base64", "/etc/certs/shibIDP.jks",
+                           decode=True, binary_mode=True)
     sync_sealer(manager)
 
     render_idp3_templates(manager)
@@ -366,12 +336,22 @@ def main():
 
     if GLUU_PERSISTENCE_TYPE in ("ldap", "hybrid"):
         render_ldap_properties(manager)
-        sync_ldap_cert(manager)
-        sync_ldap_pkcs12(manager)
+        manager.secret.to_file("ldap_ssl_cert", "/etc/certs/opendj.crt", decode=True)
+        manager.secret.to_file(
+            "ldap_pkcs12_base64",
+            manager.config.get("ldapTrustStoreFn"),
+            decode=True,
+            binary_mode=True
+        )
 
     if GLUU_PERSISTENCE_TYPE in ("couchbase", "hybrid"):
         render_couchbase_properties(manager)
-        sync_couchbase_pkcs12(manager)
+        manager.secret.to_file(
+            "couchbase_pkcs12_base64",
+            manager.config.get("couchbaseTrustStoreFn"),
+            decode=True,
+            binary_mode=True,
+        )
         create_couchbase_shib_user(manager)
 
         if "user" in get_couchbase_mappings():
@@ -380,8 +360,8 @@ def main():
     if GLUU_PERSISTENCE_TYPE == "hybrid":
         render_hybrid_properties()
 
-    render_ssl_cert(manager)
-    render_ssl_key(manager)
+    manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
+    manager.secret.to_file("ssl_key", "/etc/certs/gluu_https.key")
 
     modify_jetty_xml()
     modify_webdefault_xml()
