@@ -336,6 +336,7 @@ def main():
 
     if GLUU_PERSISTENCE_TYPE in ("ldap", "hybrid"):
         render_ldap_properties(manager)
+
         manager.secret.to_file("ldap_ssl_cert", "/etc/certs/opendj.crt", decode=True)
         manager.secret.to_file(
             "ldap_pkcs12_base64",
@@ -346,6 +347,7 @@ def main():
 
     if GLUU_PERSISTENCE_TYPE in ("couchbase", "hybrid"):
         render_couchbase_properties(manager)
+        manager.secret.to_file("couchbase_chain_cert", "/etc/certs/couchbase.pem")
         manager.secret.to_file(
             "couchbase_pkcs12_base64",
             manager.config.get("couchbaseTrustStoreFn"),
