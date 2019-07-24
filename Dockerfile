@@ -1,6 +1,4 @@
-# FROM adoptopenjdk/openjdk11:jre-11.0.4_11-alpine
 FROM openjdk:8-jre-alpine3.9
-# FROM azul/zulu-openjdk-alpine:11.0.4-jre
 
 # ===============
 # Alpine packages
@@ -169,14 +167,6 @@ RUN mv /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn
 RUN cp /opt/shibboleth-idp/conf/global.xml /opt/shibboleth-idp/conf/global.xml.bak
 COPY templates /app/templates
 COPY scripts /app/scripts
-
-# # symlink for JRE - AdoptOpenJDK
-# RUN mkdir -p /usr/lib/jvm/default-jvm \
-#     && ln -s /opt/java/openjdk /usr/lib/jvm/default-jvm/jre
-
-# # symlink for JRE - Zulu
-# RUN mkdir -p /usr/lib/jvm/default-jvm \
-#     && ln -s /usr/lib/jvm/zulu-11 /usr/lib/jvm/default-jvm/jre
 
 # # create jetty user
 # RUN useradd -ms /bin/sh --uid 1000 jetty \
