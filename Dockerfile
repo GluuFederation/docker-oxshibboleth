@@ -38,31 +38,24 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV OX_VERSION=4.0.b2 \
-    OX_BUILD_DATE=2019-07-31
-
-# the LABEL defined before downloading ox war/jar files to make sure
-# it gets the latest build for specific version
-LABEL maintainer="Gluu Inc. <support@gluu.org>" \
-    vendor="Gluu Federation" \
-    org.gluu.oxshibboleth.version="${OX_VERSION}" \
-    org.gluu.oxshibboleth.build-date="${OX_BUILD_DATE}"
+ENV GLUU_VERSION=4.0.b3 \
+    GLUU_BUILD_DATE=2019-08-15
 
 # Install oxShibboleth WAR
-RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${OX_VERSION}/oxshibbolethIdp-${OX_VERSION}.war -O /tmp/oxshibboleth.war \
+RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
     && mkdir -p ${JETTY_BASE}/idp/webapps \
     && unzip -qq /tmp/oxshibboleth.war -d ${JETTY_BASE}/idp/webapps/idp \
     && java -jar ${JETTY_HOME}/start.jar jetty.home=${JETTY_HOME} jetty.base=${JETTY_BASE}/idp --add-to-start=server,deploy,annotations,resources,http,http-forwarded,threadpool,jsp \
     && rm -f /tmp/oxshibboleth.war
 
 # Install Shibboleth JAR
-RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${OX_VERSION}/oxShibbolethStatic-${OX_VERSION}.jar -O /tmp/shibboleth-idp.jar \
+RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${GLUU_VERSION}/oxShibbolethStatic-${GLUU_VERSION}.jar -O /tmp/shibboleth-idp.jar \
     && unzip -qq /tmp/shibboleth-idp.jar -d /opt \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
 
 # RUN mkdir -p /opt/shibboleth-idp/lib \
-#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${OX_VERSION}.jar /opt/shibboleth-idp/lib/
+#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${GLUU_VERSION}.jar /opt/shibboleth-idp/lib/
 
 # ====
 # Tini
@@ -149,6 +142,14 @@ ENV GLUU_SHIB_SOURCE_DIR=/opt/shared-shibboleth-idp \
 # misc stuff
 # ==========
 
+LABEL name="oxShibboleth" \
+    maintainer="Gluu Inc. <support@gluu.org>" \
+    vendor="Gluu Federation" \
+    version="4.0.0" \
+    release="dev" \
+    summary="Gluu oxShibboleth" \
+    description="Shibboleth project for the Gluu Server's SAML IDP functionality"
+
 RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     /opt/shibboleth-idp/logs \
     /opt/shibboleth-idp/lib \
@@ -167,6 +168,7 @@ RUN mv /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn
 RUN cp /opt/shibboleth-idp/conf/global.xml /opt/shibboleth-idp/conf/global.xml.bak
 COPY templates /app/templates
 COPY scripts /app/scripts
+RUN chmod +x /app/scripts/entrypoint.sh
 
 # # create jetty user
 # RUN useradd -ms /bin/sh --uid 1000 jetty \
@@ -189,4 +191,4 @@ COPY scripts /app/scripts
 # USER 1000
 
 ENTRYPOINT ["tini", "-g", "--"]
-CMD ["sh", "/app/scripts/entrypoint.sh"]
+CMD ["/app/scripts/entrypoint.sh"]
