@@ -212,14 +212,13 @@ def render_gluu_properties():
 
 
 def generate_idp3_sealer(manager):
-    lib = "'/opt/gluu/jetty/idp/webapps/idp/WEB-INF/lib/*' " \
-          "net.shibboleth.utilities.java.support.security.BasicKeystoreKeyStrategyTool"
     cmd = " ".join([
         "java",
-        "-classpath {} ".format(lib),
-        "--storefile /opt/shibboleth-idp/credentials/sealer.jks ",
-        "--versionfile /opt/shibboleth-idp/credentials/sealer.kver ",
-        "--alias secret ",
+        "-classpath '/opt/gluu/jetty/idp/webapps/idp/WEB-INF/lib/*'",
+        "net.shibboleth.utilities.java.support.security.BasicKeystoreKeyStrategyTool",
+        "--storefile /opt/shibboleth-idp/credentials/sealer.jks",
+        "--versionfile /opt/shibboleth-idp/credentials/sealer.kver",
+        "--alias secret",
         "--storepass {}".format(manager.secret.get("shibJksPass")),
     ])
     return exec_cmd(cmd)
