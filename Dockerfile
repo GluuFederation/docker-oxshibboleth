@@ -162,9 +162,10 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     /opt/shared-shibboleth-idp \
     /app
 
-# COPY static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
 COPY static /app/static
-RUN mv /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/
+RUN cp /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/ \
+    && cp /app/static/idp3/oxauth-supported-principals.xml /opt/shibboleth-idp/conf/authn/
+
 RUN cp /opt/shibboleth-idp/conf/global.xml /opt/shibboleth-idp/conf/global.xml.bak
 COPY templates /app/templates
 COPY scripts /app/scripts
