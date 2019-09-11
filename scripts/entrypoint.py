@@ -3,11 +3,6 @@ import os
 import re
 
 from pygluu.containerlib import get_manager
-from pygluu.containerlib.utils import as_boolean
-from pygluu.containerlib.utils import decode_text
-from pygluu.containerlib.utils import exec_cmd
-from pygluu.containerlib.utils import safe_render
-from pygluu.containerlib.utils import cert_to_truststore
 from pygluu.containerlib.persistence import render_hybrid_properties
 from pygluu.containerlib.persistence import render_couchbase_properties
 from pygluu.containerlib.persistence import sync_couchbase_cert
@@ -19,6 +14,12 @@ from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
 from pygluu.containerlib.persistence.couchbase import get_couchbase_user
 from pygluu.containerlib.persistence.couchbase import get_couchbase_password
+from pygluu.containerlib.utils import as_boolean
+from pygluu.containerlib.utils import decode_text
+from pygluu.containerlib.utils import exec_cmd
+from pygluu.containerlib.utils import safe_render
+from pygluu.containerlib.utils import cert_to_truststore
+from pygluu.containerlib.utils import get_server_certificate
 
 from cbm import CBM
 
@@ -220,8 +221,7 @@ def main():
     if persistence_type == "hybrid":
         render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
-    manager.secret.to_file("ssl_cert", "/etc/certs/gluu_https.crt")
-    manager.secret.to_file("ssl_key", "/etc/certs/gluu_https.key")
+    get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
     cert_to_truststore(
         "gluu_https",
         "/etc/certs/gluu_https.crt",
