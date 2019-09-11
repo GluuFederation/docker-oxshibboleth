@@ -5,18 +5,6 @@ set -e
 # FUNCTIONS
 # =========
 
-import_ssl_cert() {
-    if [ -f /etc/certs/gluu_https.crt ]; then
-        openssl x509 -outform der -in /etc/certs/gluu_https.crt -out /etc/certs/gluu_https.der
-        keytool -importcert -trustcacerts \
-            -alias gluu_https \
-            -file /etc/certs/gluu_https.der \
-            -keystore /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
-            -storepass changeit \
-            -noprompt
-    fi
-}
-
 pull_shared_shib_files() {
     mkdir -p $GLUU_SHIB_TARGET_DIR $GLUU_SHIB_SOURCE_DIR
     if [ -n "$(ls -A $GLUU_SHIB_SOURCE_DIR/ 2>/dev/null)" ]; then
@@ -75,20 +63,14 @@ else
 fi
 
 if [ ! -f /deploy/touched ]; then
-    if [ -f /touched ]; then
-        # backward-compat
-        mv /touched /deploy/touched
+    if [ -f /etc/redhat-release ]; then
+        source scl_source enable python27 && python /app/scripts/entrypoint.py
     else
-        if [ -f /etc/redhat-release ]; then
-            source scl_source enable python27 && python /app/scripts/entrypoint.py
-        else
-            python /app/scripts/entrypoint.py
-        fi
-
-        import_ssl_cert
-        pull_shared_shib_files
-        touch /deploy/touched
+        python /app/scripts/entrypoint.py
     fi
+
+    pull_shared_shib_files
+    touch /deploy/touched
 fi
 
 # monitor filesystem changes in Shibboleth-related files
