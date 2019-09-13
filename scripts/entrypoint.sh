@@ -83,6 +83,6 @@ exec java \
     -XX:MaxRAMPercentage=$GLUU_MAX_RAM_PERCENTAGE \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp \
-    -Dorg.ldaptive.provider=org.ldaptive.provider.unboundid.UnboundIDProvider
+    -Dorg.ldaptive.provider=org.ldaptive.provider.unboundid.UnboundIDProvider \
     -jar /opt/jetty/start.jar \
     -server
