@@ -12,6 +12,18 @@ pull_shared_shib_files() {
     fi
 }
 
+run_wait() {
+    python /app/scripts/wait.py
+}
+
+run_entrypoint() {
+    if [ ! -f /deploy/touched ]; then
+        python /app/scripts/entrypoint.py
+        touch /deploy/touched
+    fi
+    pull_shared_shib_files
+}
+
 # ==========
 # ENTRYPOINT
 # ==========
@@ -25,52 +37,12 @@ cat << LICENSE_ACK
 
 LICENSE_ACK
 
-# check persistence type
-case "${GLUU_PERSISTENCE_TYPE}" in
-    ldap|couchbase|hybrid)
-        ;;
-    *)
-        echo "unsupported GLUU_PERSISTENCE_TYPE value; please choose 'ldap', 'couchbase', or 'hybrid'"
-        exit 1
-        ;;
-esac
-
-# check mapping used by LDAP
-if [ "${GLUU_PERSISTENCE_TYPE}" = "hybrid" ]; then
-    case "${GLUU_PERSISTENCE_LDAP_MAPPING}" in
-        default|user|cache|site|token)
-            ;;
-        *)
-            echo "unsupported GLUU_PERSISTENCE_LDAP_MAPPING value; please choose 'default', 'user', 'cache', 'site', or  'token'"
-            exit 1
-            ;;
-    esac
-fi
-
-# run wait_for functions
-deps="config,secret"
-
-if [ "${GLUU_PERSISTENCE_TYPE}" = "hybrid" ]; then
-    deps="${deps},ldap,couchbase"
-else
-    deps="${deps},${GLUU_PERSISTENCE_TYPE}"
-fi
-
 if [ -f /etc/redhat-release ]; then
-    source scl_source enable python27 && gluu-wait --deps="$deps"
+    source scl_source enable python27 && run_wait
+    source scl_source enable python27 && run_entrypoint
 else
-    gluu-wait --deps="$deps"
-fi
-
-if [ ! -f /deploy/touched ]; then
-    if [ -f /etc/redhat-release ]; then
-        source scl_source enable python27 && python /app/scripts/entrypoint.py
-    else
-        python /app/scripts/entrypoint.py
-    fi
-
-    pull_shared_shib_files
-    touch /deploy/touched
+    run_wait
+    run_entrypoint
 fi
 
 # monitor filesystem changes in Shibboleth-related files
@@ -78,11 +50,13 @@ sh /app/scripts/shibwatcher.sh &
 
 cd /opt/gluu/jetty/idp
 exec java \
+    -server \
+    -XX:MaxGCPauseMillis=400 \
+    -XX:+UseParallelGC \
     -XX:+DisableExplicitGC \
     -XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=$GLUU_MAX_RAM_PERCENTAGE \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp \
     -Dorg.ldaptive.provider=org.ldaptive.provider.unboundid.UnboundIDProvider \
-    -jar /opt/jetty/start.jar \
-    -server
+    -jar /opt/jetty/start.jar
