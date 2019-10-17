@@ -29,6 +29,16 @@ GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
 
 def render_idp3_templates(manager):
     ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
+
+    persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
+    ldap_mapping = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
+
+    idp_resolver_filter = "(|(uid=$requestContext.principalName)(mail=$requestContext.principalName))"
+
+    if all([persistence_type in ("couchbase", "hybrid"),
+            "user" in get_couchbase_mappings(persistence_type, ldap_mapping)]):
+        idp_resolver_filter = "(&(|(lower(uid)=$requestContext.principalName)(mail=$requestContext.principalName))(objectClass=gluuPerson))"
+
     ctx = {
         "hostname": manager.config.get("hostname"),
         "shibJksPass": manager.secret.get("shibJksPass"),
@@ -43,6 +53,7 @@ def render_idp3_templates(manager):
         "ldapCertFn": "/etc/certs/opendj.crt",
         "couchbase_hostname": GLUU_COUCHBASE_URL,
         "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
+        "idp_attribute_resolver_ldap.search_filter": idp_resolver_filter,
     }
 
     for file_path in glob.glob("/app/templates/idp3/*.properties"):
