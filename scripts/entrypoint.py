@@ -14,6 +14,7 @@ from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
 from pygluu.containerlib.persistence.couchbase import get_couchbase_user
 from pygluu.containerlib.persistence.couchbase import get_couchbase_password
+from pygluu.containerlib.persistence.couchbase import resolve_couchbase_host
 from pygluu.containerlib.utils import as_boolean
 from pygluu.containerlib.utils import decode_text
 from pygluu.containerlib.utils import exec_cmd
@@ -179,7 +180,9 @@ def create_couchbase_shib_user(manager):
     hostname = GLUU_COUCHBASE_URL
     user = get_couchbase_user(manager)
     password = get_couchbase_password(manager)
-    cbm = CBM(hostname, user, password)
+
+    active_host = resolve_couchbase_host(hostname, user, password)
+    cbm = CBM(active_host, user, password)
 
     cbm.create_user(
         'couchbaseShibUser',
