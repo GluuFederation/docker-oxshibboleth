@@ -14,15 +14,13 @@ from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
 from pygluu.containerlib.persistence.couchbase import get_couchbase_user
 from pygluu.containerlib.persistence.couchbase import get_couchbase_password
-from pygluu.containerlib.persistence.couchbase import resolve_couchbase_host
+from pygluu.containerlib.persistence.couchbase import CouchbaseClient
 from pygluu.containerlib.utils import as_boolean
 from pygluu.containerlib.utils import decode_text
 from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
 from pygluu.containerlib.utils import cert_to_truststore
 from pygluu.containerlib.utils import get_server_certificate
-
-from cbm import CBM
 
 GLUU_LDAP_URL = os.environ.get("GLUU_LDAP_URL", "localhost:1636")
 GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
@@ -181,10 +179,8 @@ def create_couchbase_shib_user(manager):
     user = get_couchbase_user(manager)
     password = get_couchbase_password(manager)
 
-    active_host = resolve_couchbase_host(hostname, user, password)
-    cbm = CBM(active_host, user, password)
-
-    cbm.create_user(
+    cb_client = CouchbaseClient(hostname, user, password)
+    cb_client.create_user(
         'couchbaseShibUser',
         manager.secret.get("couchbase_shib_user_password"),
         'Shibboleth IDP',
