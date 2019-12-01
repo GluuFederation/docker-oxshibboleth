@@ -32,7 +32,7 @@ EXPOSE 8080
 # ============
 
 ENV GLUU_VERSION=4.0.1.Final \
-    GLUU_BUILD_DATE=2019-10-30
+    GLUU_BUILD_DATE=2019-11-30
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -146,7 +146,7 @@ LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
     version="4.0.1" \
-    release="02" \
+    release="03" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
