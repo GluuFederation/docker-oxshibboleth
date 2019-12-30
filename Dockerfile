@@ -12,7 +12,7 @@ RUN apk update \
 # Jetty
 # =====
 
-ENV JETTY_VERSION=9.4.15.v20190215 \
+ENV JETTY_VERSION=9.4.24.v20191120 \
     JETTY_HOME=/opt/jetty \
     JETTY_BASE=/opt/gluu/jetty \
     JETTY_USER_HOME_LIB=/home/jetty/lib
@@ -31,8 +31,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV GLUU_VERSION=4.0.1.Final \
-    GLUU_BUILD_DATE=2019-11-30
+ENV GLUU_VERSION=4.1.0.Final \
+    GLUU_BUILD_DATE=2019-12-26
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -145,8 +145,8 @@ ENV GLUU_SHIB_SOURCE_DIR=/opt/shared-shibboleth-idp \
 LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.0.1" \
-    release="03" \
+    version="4.1.0" \
+    release="dev" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
