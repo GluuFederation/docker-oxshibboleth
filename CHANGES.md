@@ -2,6 +2,12 @@
 
 Here you can see an overview of changes between each release.
 
+## Version 4.0.1_04
+
+Released on January 3rd, 2020.
+
+* Fixed invalid tag in `idp-metadata.xml` template.
+
 ## Version 4.0.1_03
 
 Released on December 1st, 2019.
