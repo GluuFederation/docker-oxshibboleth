@@ -32,7 +32,7 @@ EXPOSE 8080
 # ============
 
 ENV GLUU_VERSION=4.1.0.Final \
-    GLUU_BUILD_DATE=2019-12-26
+    GLUU_BUILD_DATE=2020-01-03
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
