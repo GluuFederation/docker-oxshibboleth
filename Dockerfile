@@ -5,7 +5,7 @@ FROM openjdk:8-jre-alpine3.9
 # ===============
 
 RUN apk update \
-    && apk add --no-cache py-pip inotify-tools openssl shadow \
+    && apk add --no-cache py-pip inotify-tools openssl \
     && apk add --no-cache --virtual build-deps wget git
 
 # =====
@@ -32,7 +32,7 @@ EXPOSE 8080
 # ============
 
 ENV GLUU_VERSION=4.1.0.Final \
-    GLUU_BUILD_DATE="2020-02-17 16:25"
+    GLUU_BUILD_DATE="2020-02-28 09:53"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
