@@ -21,7 +21,7 @@ run_entrypoint() {
         python /app/scripts/entrypoint.py
         touch /deploy/touched
     fi
-    pull_shared_shib_files
+    # pull_shared_shib_files
 }
 
 # ==========
@@ -36,8 +36,8 @@ else
     run_entrypoint
 fi
 
-# monitor filesystem changes in Shibboleth-related files
-sh /app/scripts/shibwatcher.sh &
+# # monitor filesystem changes in Shibboleth-related files
+# sh /app/scripts/shibwatcher.sh &
 
 cd /opt/gluu/jetty/idp
 exec java \
