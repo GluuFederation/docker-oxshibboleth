@@ -2,6 +2,12 @@
 
 Here you can see an overview of changes between each release.
 
+## Version 4.1.1_02
+
+Released on April 2nd, 2020.
+
+* Disabled `shibwatcher` script.
+
 ## Version 4.1.1_01
 
 Released on March 24th, 2020.
@@ -13,6 +19,12 @@ Released on March 24th, 2020.
 Released on March 5th, 2020.
 
 * Conformed to Gluu Server v4.1.
+
+## Version 4.0.1_06
+
+Released on April 2nd, 2020.
+
+* Disabled `shibwatcher` script.
 
 ## Version 4.0.1_05
 
