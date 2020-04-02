@@ -195,4 +195,4 @@ RUN chmod +x /app/scripts/entrypoint.sh
 # USER 1000
 
 ENTRYPOINT ["tini", "-g", "--"]
-CMD ["/app/scripts/entrypoint.sh"]
+CMD ["sh", "/app/scripts/entrypoint.sh"]
