@@ -134,9 +134,7 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
 # Generic ENV
 # ===========
 
-ENV GLUU_SHIB_SOURCE_DIR=/opt/shared-shibboleth-idp \
-    GLUU_SHIB_TARGET_DIR=/opt/shibboleth-idp \
-    GLUU_MAX_RAM_PERCENTAGE=75.0 \
+ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_WAIT_MAX_TIME=300 \
     GLUU_WAIT_SLEEP_DURATION=10 \
     GLUU_OXTRUST_BACKEND=localhost:8082
@@ -162,7 +160,6 @@ RUN mkdir -p /opt/shibboleth-idp/metadata/credentials \
     /etc/certs \
     /etc/gluu/conf \
     /deploy \
-    /opt/shared-shibboleth-idp \
     /app
 
 COPY static /app/static
@@ -181,11 +178,9 @@ RUN chmod +x /app/scripts/entrypoint.sh
 # # adjust ownership
 # RUN chown -R 1000:1000 /opt/gluu/jetty \
 #     && chown -R 1000:1000 /deploy \
-#     && chown -R 1000:1000 /opt/shared-shibboleth-idp \
 #     && chown -R 1000:1000 /opt/shibboleth-idp \
 #     && chmod -R g+w /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
 #     && chgrp -R 0 /opt/gluu/jetty && chmod -R g=u /opt/gluu/jetty \
-#     && chgrp -R 0 /opt/shared-shibboleth-idp && chmod -R g=u /opt/shared-shibboleth-idp \
 #     && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
 #     && chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
 #     && chgrp -R 0 /etc/gluu && chmod -R g=u /etc/gluu \
