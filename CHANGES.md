@@ -2,6 +2,12 @@
 
 Here you can see an overview of changes between each release.
 
+## Version 4.0.1_06
+
+Released on April 2nd, 2020.
+
+* Disabled `shibwatcher` script.
+
 ## Version 4.0.1_05
 
 Released on March 5th, 2020.
