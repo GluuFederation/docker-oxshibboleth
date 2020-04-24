@@ -57,10 +57,12 @@ def get_sync_interval():
 def main():
     url = os.environ.get("GLUU_JCA_URL", "http://localhost:8080")
     username = os.environ.get("GLUU_JCA_USERNAME", "admin")
-    password_file = os.environ.get("GLUU_JCA_PASSWORD_FILE", "/etc/gluu/conf/jca_password")
+    password = "admin"
 
-    with open(password_file) as f:
-        password = f.read().strip()
+    password_file = os.environ.get("GLUU_JCA_PASSWORD_FILE", "/etc/gluu/conf/jca_password")
+    if os.path.isfile(password_file):
+        with open(password_file) as f:
+            password = f.read().strip()
 
     sync_interval = get_sync_interval()
     while True:

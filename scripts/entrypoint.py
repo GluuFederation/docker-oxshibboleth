@@ -252,12 +252,6 @@ def main():
     modify_jetty_xml()
     modify_webdefault_xml()
 
-    jca_password_file = os.environ.get("GLUU_JCA_PASSWORD_FILE", "/etc/gluu/conf/jca_password")
-    if not os.path.isfile(jca_password_file):
-        with open(jca_password_file, "w") as f:
-            jca_password = manager.secret.get("jca_pw") or "admin"
-            f.write(jca_password)
-
 
 if __name__ == "__main__":
     main()
