@@ -72,6 +72,19 @@ RUN pip install --no-cache-dir -U pip \
 RUN apk del build-deps \
     && rm -rf /var/cache/apk/*
 
+# ======
+# webdav
+# ======
+
+RUN apk update \
+    && apk add --no-cache py3-pip libxml2-dev libxslt-dev \
+    && apk add --no-cache --virtual build-deps build-base python3-dev
+
+RUN pip3 install webdavclient3
+
+RUN apk del build-deps \
+    && rm -rf /var/cache/apk/*
+
 # =======
 # License
 # =======
@@ -137,7 +150,11 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
 ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_WAIT_MAX_TIME=300 \
     GLUU_WAIT_SLEEP_DURATION=10 \
-    GLUU_OXTRUST_BACKEND=localhost:8082
+    GLUU_OXTRUST_BACKEND=localhost:8082 \
+    GLUU_JCA_URL=http://localhost:8080 \
+    GLUU_JCA_USERNAME=admin \
+    GLUU_JCA_PASSWORD_FILE=/etc/gluu/conf/jca_password \
+    GLUU_JCA_SYNC_INTERVAL=300
 
 # ==========
 # misc stuff

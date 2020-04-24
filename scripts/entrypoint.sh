@@ -28,6 +28,9 @@ else
     run_entrypoint
 fi
 
+# sync files from JCR/webdav
+python3 /app/scripts/jca_sync.py &
+
 cd /opt/gluu/jetty/idp
 exec java \
     -server \
