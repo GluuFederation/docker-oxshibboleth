@@ -55,6 +55,11 @@ def get_sync_interval():
 
 
 def main():
+    store_type = os.environ.get("GLUU_DOCUMENT_STORE_TYPE", "LOCAL")
+    if store_type != "JCA":
+        logger.warning(f"Using {store_type} document store; sync is disabled ...")
+        return
+
     url = os.environ.get("GLUU_JCA_URL", "http://localhost:8080")
     username = os.environ.get("GLUU_JCA_USERNAME", "admin")
     password = "admin"
@@ -65,9 +70,12 @@ def main():
             password = f.read().strip()
 
     sync_interval = get_sync_interval()
-    while True:
-        sync_from_webdav(url, username, password)
-        time.sleep(sync_interval)
+    try:
+        while True:
+            sync_from_webdav(url, username, password)
+            time.sleep(sync_interval)
+    except KeyboardInterrupt:
+        logger.warn("Canceled by user; exiting ...")
 
 
 if __name__ == "__main__":
