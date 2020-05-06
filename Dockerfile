@@ -5,8 +5,8 @@ FROM openjdk:8-jre-alpine3.9
 # ===============
 
 RUN apk update \
-    && apk add --no-cache py-pip inotify-tools openssl \
-    && apk add --no-cache --virtual build-deps wget git
+    && apk add --no-cache py-pip openssl py3-pip libxml2-dev libxslt-dev \
+    && apk add --no-cache --virtual build-deps wget git build-base python3-dev
 
 # =====
 # Jetty
@@ -63,24 +63,12 @@ RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-stati
 
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt
+    && pip install --no-cache-dir -r /tmp/requirements.txt \
+    && pip3 install --no-cache-dir webdavclient3
 
 # =======
 # Cleanup
 # =======
-
-RUN apk del build-deps \
-    && rm -rf /var/cache/apk/*
-
-# ======
-# webdav
-# ======
-
-RUN apk update \
-    && apk add --no-cache py3-pip libxml2-dev libxslt-dev \
-    && apk add --no-cache --virtual build-deps build-base python3-dev
-
-RUN pip3 install webdavclient3
 
 RUN apk del build-deps \
     && rm -rf /var/cache/apk/*
@@ -207,5 +195,5 @@ RUN chmod +x /app/scripts/entrypoint.sh
 # # run as non-root user
 # USER 1000
 
-ENTRYPOINT ["tini", "-g", "--"]
+ENTRYPOINT ["tini", "-e", "143", "-g", "--"]
 CMD ["sh", "/app/scripts/entrypoint.sh"]

@@ -1,6 +1,7 @@
 import logging.config
 import os
 import shutil
+import tempfile
 import time
 
 from webdav3.client import Client
@@ -9,8 +10,8 @@ from webdav3.exceptions import NoConnection
 
 from settings import LOGGING_CONFIG
 
-LOCAL_DIR = "/opt/webdav"
-REMOTE_DIR = "repository/default/opt/shibboleth-idp"
+LOCAL_DIR = "/opt/shibboleth-idp"
+REMOTE_DIR = "".join(["repository/default", LOCAL_DIR])
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger("webdav")
@@ -24,24 +25,26 @@ def sync_from_webdav(url, username, password):
     }
     client = Client(options)
 
-    try:
-        logger.info(f"Sync files from remote directory {url}/{REMOTE_DIR} into local directory {LOCAL_DIR}")
-        # download remote dirs to new directory
-        client.download_sync(REMOTE_DIR, LOCAL_DIR)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        try:
+            logger.info(f"Sync files from remote directory {url}/{REMOTE_DIR} into local directory {tmpdir}")
 
-        # copy all downloaded files to /opt/shibboleth-idp
-        for subdir, _, files in os.walk(LOCAL_DIR):
-            for file_ in files:
-                src = os.path.join(subdir, file_)
-                dest = src.replace(LOCAL_DIR, "/opt/shibboleth-idp")
+            # download remote dirs to new directory
+            client.download_sync(REMOTE_DIR, tmpdir)
 
-                if not os.path.exists(os.path.dirname(dest)):
-                    os.makedirs(os.path.dirname(dest))
+            # copy all downloaded files to /opt/shibboleth-idp
+            for subdir, _, files in os.walk(tmpdir):
+                for file_ in files:
+                    src = os.path.join(subdir, file_)
+                    dest = src.replace(tmpdir, LOCAL_DIR)
 
-                logger.info(f"Copying {src} to {dest}")
-                shutil.copyfile(src, dest)
-    except (RemoteResourceNotFound, NoConnection) as exc:
-        logger.warning(f"Unable to sync files from remote directory {url}/{REMOTE_DIR}; reason={exc}")
+                    if not os.path.exists(os.path.dirname(dest)):
+                        os.makedirs(os.path.dirname(dest))
+
+                    logger.info(f"Copying {src} to {dest}")
+                    shutil.copyfile(src, dest)
+        except (RemoteResourceNotFound, NoConnection) as exc:
+            logger.warning(f"Unable to sync files from remote directory {url}/{REMOTE_DIR}; reason={exc}")
 
 
 def get_sync_interval():

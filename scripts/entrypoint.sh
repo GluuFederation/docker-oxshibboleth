@@ -16,20 +16,23 @@ run_entrypoint() {
     fi
 }
 
+run_sync_jca() {
+    python3 /app/scripts/jca_sync.py &
+}
+
 # ==========
 # ENTRYPOINT
 # ==========
 
 if [ -f /etc/redhat-release ]; then
     source scl_source enable python27 && run_wait
+    source scl_source enable python3 && run_sync_jca
     source scl_source enable python27 && run_entrypoint
 else
     run_wait
+    run_sync_jca
     run_entrypoint
 fi
-
-# sync files from JCR/webdav
-python3 /app/scripts/jca_sync.py &
 
 cd /opt/gluu/jetty/idp
 exec java \
