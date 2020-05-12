@@ -40,7 +40,7 @@ def main():
     else:
         deps.append(persistence_type)
 
-    deps.append("oxtrust")
+    # deps.append("oxtrust")
     wait_for(manager, deps)
 
 
