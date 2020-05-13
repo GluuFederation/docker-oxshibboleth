@@ -6,7 +6,7 @@ FROM adoptopenjdk/openjdk11:alpine-jre
 # ===============
 
 RUN apk update \
-    && apk add --no-cache openssl py3-pip libxml2-dev libxslt-dev \
+    && apk add --no-cache openssl py3-pip libxml2-dev libxslt-dev tini \
     && apk add --no-cache --virtual build-deps wget git build-base python3-dev \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip
@@ -53,12 +53,12 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${GLUU_VERSION
 # RUN mkdir -p /opt/shibboleth-idp/lib \
 #     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${GLUU_VERSION}.jar /opt/shibboleth-idp/lib/
 
-# ====
-# Tini
-# ====
+# # ====
+# # Tini
+# # ====
 
-RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
-    && chmod +x /usr/bin/tini
+# RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
+#     && chmod +x /usr/bin/tini
 
 # ======
 # Python
