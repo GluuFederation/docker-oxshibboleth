@@ -5,7 +5,7 @@ import re
 from pygluu.containerlib import get_manager
 from pygluu.containerlib.persistence import render_hybrid_properties
 from pygluu.containerlib.persistence import render_couchbase_properties
-from pygluu.containerlib.persistence import sync_couchbase_cert
+# from pygluu.containerlib.persistence import sync_couchbase_cert
 from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import render_salt
 from pygluu.containerlib.persistence import render_gluu_properties
@@ -229,7 +229,7 @@ def main():
             "/app/templates/gluu-couchbase.properties.tmpl",
             "/etc/gluu/conf/gluu-couchbase.properties",
         )
-        sync_couchbase_cert(manager)
+        # sync_couchbase_cert(manager)
         sync_couchbase_truststore(manager)
         create_couchbase_shib_user(manager)
 

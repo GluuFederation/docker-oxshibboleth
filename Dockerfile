@@ -1,12 +1,15 @@
-FROM openjdk:8-jre-alpine3.9
+# FROM openjdk:8-jre-alpine3.9
+FROM adoptopenjdk/openjdk11:alpine-jre
 
 # ===============
 # Alpine packages
 # ===============
 
 RUN apk update \
-    && apk add --no-cache py-pip openssl py3-pip libxml2-dev libxslt-dev \
-    && apk add --no-cache --virtual build-deps wget git build-base python3-dev
+    && apk add --no-cache openssl py3-pip libxml2-dev libxslt-dev \
+    && apk add --no-cache --virtual build-deps wget git build-base python3-dev \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # =====
 # Jetty
@@ -31,8 +34,8 @@ EXPOSE 8080
 # oxShibboleth
 # ============
 
-ENV GLUU_VERSION=4.1.1.Final \
-    GLUU_BUILD_DATE="2020-05-10 17:09"
+ARG GLUU_VERSION=4.2.0-SNAPSHOT
+ARG GLUU_BUILD_DATE="2020-05-12 17:23"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -63,8 +66,7 @@ RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-stati
 
 COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt \
-    && pip3 install --no-cache-dir webdavclient3
+    && pip install --no-cache-dir -r /tmp/requirements.txt
 
 # =======
 # Cleanup
@@ -152,8 +154,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
 LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.1.1" \
-    release="03" \
+    version="4.2.0" \
+    release="dev" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
