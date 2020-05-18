@@ -1,5 +1,10 @@
 FROM adoptopenjdk/openjdk11:alpine-jre
 
+# symlink JVM
+RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
+    && ln -sf /opt/java/openjdk /usr/lib/jvm/default-jvm/jre \
+    && ln -sf /usr/lib/jvm/default-jvm/jre /usr/java/latest/jre
+
 # ===============
 # Alpine packages
 # ===============
@@ -34,7 +39,7 @@ EXPOSE 8080
 # ============
 
 ARG GLUU_VERSION=4.2.0-SNAPSHOT
-ARG GLUU_BUILD_DATE="2020-05-12 17:23"
+ARG GLUU_BUILD_DATE="2020-05-15 15:31"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -179,10 +184,6 @@ RUN cp /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn
 COPY templates /app/templates
 COPY scripts /app/scripts
 RUN chmod +x /app/scripts/entrypoint.sh
-# symlink JVM
-RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
-    && ln -sf /opt/java/openjdk /usr/lib/jvm/default-jvm/jre \
-    && ln -sf /usr/lib/jvm/default-jvm/jre /usr/java/latest/jre
 
 ENTRYPOINT ["tini", "-e", "143", "-g", "--"]
 CMD ["sh", "/app/scripts/entrypoint.sh"]
