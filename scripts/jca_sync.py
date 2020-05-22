@@ -1,3 +1,5 @@
+import contextlib
+import glob
 import subprocess
 import shlex
 import logging.config
@@ -71,6 +73,14 @@ class RClone(object):
             return False
         return True
 
+    def ls(self, path):
+        cmd = f"rclone ls jackrabbit:{path}"
+        out, err, code = exec_cmd(cmd)
+        if code != 0:
+            errors = [e for e in err.decode().splitlines()]
+            logger.warning(f"Unable to list remote directory {path}; reason={errors}")
+        return out
+
 
 def sync_from_webdav(url, username, password):
     rclone = RClone(url, username, password)
@@ -78,6 +88,29 @@ def sync_from_webdav(url, username, password):
 
     logger.info(f"Sync files with remote directory {url}{ROOT_DIR}{SYNC_DIR}")
     rclone.copy_from(SYNC_DIR, SYNC_DIR)
+
+
+def prune_local_tr(url, username, password):
+    def remote_tr_files(files):
+        for f in files:
+            f = f.strip().split(" ")[1]
+            if f.endswith("-sp-metadata.xml"):
+                yield f
+
+    rclone = RClone(url, username, password)
+    rclone.configure()
+
+    logger.info(f"Removing obsolete local TR files (if any)")
+    out = rclone.ls("/opt/shibboleth-idp/metadata")
+    files = tuple(remote_tr_files(out.decode().splitlines()))
+
+    for f in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
+        basename = os.path.basename(f)
+        if basename in files:
+            continue
+
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(basename)
 
 
 def get_sync_interval():
@@ -109,6 +142,7 @@ def main():
     try:
         while True:
             sync_from_webdav(url, username, password)
+            prune_local_tr(url, username, password)
             time.sleep(sync_interval)
     except KeyboardInterrupt:
         logger.warning("Canceled by user; exiting ...")
