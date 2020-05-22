@@ -1,32 +1,17 @@
 #!/bin/sh
 set -e
 
-# =========
-# FUNCTIONS
-# =========
-
-run_wait() {
-    python /app/scripts/wait.py
-}
-
-run_entrypoint() {
-    if [ ! -f /deploy/touched ]; then
-        python /app/scripts/entrypoint.py
-        touch /deploy/touched
-    fi
-}
-
-run_sync_jca() {
-    python /app/scripts/jca_sync.py &
-}
-
 # ==========
 # ENTRYPOINT
 # ==========
 
-run_wait
-run_sync_jca
-run_entrypoint
+python3 /app/scripts/wait.py
+python3 /app/scripts/jca_sync.py &
+
+if [ ! -f /deploy/touched ]; then
+    python3 /app/scripts/entrypoint.py
+    touch /deploy/touched
+fi
 
 cd /opt/gluu/jetty/idp
 exec java \
