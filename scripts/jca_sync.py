@@ -44,7 +44,7 @@ class RClone(object):
         _, err, code = exec_cmd(cmd)
 
         if code != 0:
-            errors = [e for e in err.decode().splitlines()]
+            errors = err.decode().splitlines()
             logger.warning(f"Unable to create webdav config; reason={errors}")
 
     def copy_from(self, remote, local):
@@ -52,24 +52,24 @@ class RClone(object):
         _, err, code = exec_cmd(cmd)
 
         if code != 0:
-            errors = [e for e in err.decode().splitlines()]
-            logger.warning(f"Unable to sync files from remote directories; reason={errors}")
+            errors = err.decode().splitlines()
+            logger.debug(f"Unable to sync files from remote directories; reason={errors}")
 
     def copy_to(self, remote, local):
         cmd = f"rclone copy {local} jackrabbit:{remote} --create-empty-src-dirs"
         _, err, code = exec_cmd(cmd)
 
         if code != 0:
-            errors = [e.decode() for e in err.splitlines()]
-            logger.warning(f"Unable to sync files to remote directories; reason={errors}")
+            errors = err.decode().splitlines()
+            logger.debug(f"Unable to sync files to remote directories; reason={errors}")
 
     def ready(self, path="/"):
         cmd = "rclone lsd jackrabbit:/"
         _, err, code = exec_cmd(cmd)
 
         if code != 0:
-            errors = [e for e in err.decode().splitlines()]
-            logger.warning(f"Unable to list remote directory {path}; reason={errors}")
+            errors = err.decode().splitlines()
+            logger.debug(f"Unable to list remote directory {path}; reason={errors}")
             return False
         return True
 
@@ -77,8 +77,8 @@ class RClone(object):
         cmd = f"rclone ls jackrabbit:{path}"
         out, err, code = exec_cmd(cmd)
         if code != 0:
-            errors = [e for e in err.decode().splitlines()]
-            logger.warning(f"Unable to list remote directory {path}; reason={errors}")
+            errors = err.decode().splitlines()
+            logger.debug(f"Unable to list remote directory {path}; reason={errors}")
         return out
 
 
