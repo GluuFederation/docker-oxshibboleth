@@ -69,6 +69,7 @@ RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}
 # Python
 # ======
 
+RUN apk add --no-cache py3-cryptography
 COPY requirements.txt /tmp/
 RUN pip3 install --no-cache-dir -U pip \
     && pip3 install --no-cache-dir -r /tmp/requirements.txt
