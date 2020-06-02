@@ -104,13 +104,13 @@ def prune_local_tr(url, username, password):
     out = rclone.ls("/opt/shibboleth-idp/metadata")
     files = tuple(remote_tr_files(out.decode().splitlines()))
 
-    for f in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
-        basename = os.path.basename(f)
+    for file_ in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
+        basename = os.path.basename(file_)
         if basename in files:
             continue
 
         with contextlib.suppress(FileNotFoundError):
-            os.unlink(basename)
+            os.unlink(file_)
 
 
 def get_sync_interval():
