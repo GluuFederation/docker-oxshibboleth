@@ -5,13 +5,6 @@ set -e
 # FUNCTIONS
 # =========
 
-pull_shared_shib_files() {
-    mkdir -p $GLUU_SHIB_TARGET_DIR $GLUU_SHIB_SOURCE_DIR
-    if [ -n "$(ls -A $GLUU_SHIB_SOURCE_DIR/ 2>/dev/null)" ]; then
-        cp -r $GLUU_SHIB_SOURCE_DIR/* $GLUU_SHIB_TARGET_DIR/
-    fi
-}
-
 run_wait() {
     python /app/scripts/wait.py
 }
@@ -21,7 +14,10 @@ run_entrypoint() {
         python /app/scripts/entrypoint.py
         touch /deploy/touched
     fi
-    pull_shared_shib_files
+}
+
+run_sync_jca() {
+    python3 /app/scripts/jca_sync.py &
 }
 
 # ==========
@@ -30,14 +26,13 @@ run_entrypoint() {
 
 if [ -f /etc/redhat-release ]; then
     source scl_source enable python27 && run_wait
+    source scl_source enable python3 && run_sync_jca
     source scl_source enable python27 && run_entrypoint
 else
     run_wait
+    run_sync_jca
     run_entrypoint
 fi
-
-# monitor filesystem changes in Shibboleth-related files
-sh /app/scripts/shibwatcher.sh &
 
 cd /opt/gluu/jetty/idp
 exec java \

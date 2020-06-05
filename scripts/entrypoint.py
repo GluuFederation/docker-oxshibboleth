@@ -15,7 +15,6 @@ from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
 from pygluu.containerlib.persistence.couchbase import get_couchbase_user
 from pygluu.containerlib.persistence.couchbase import get_couchbase_password
 from pygluu.containerlib.persistence.couchbase import CouchbaseClient
-from pygluu.containerlib.utils import as_boolean
 from pygluu.containerlib.utils import decode_text
 from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
@@ -93,16 +92,17 @@ def sync_sealer(manager):
     jks_fn = "/opt/shibboleth-idp/credentials/sealer.jks"
     kver_fn = "/opt/shibboleth-idp/credentials/sealer.kver"
 
-    if not as_boolean(manager.config.get("sealer_generated", False)):
-        # create sealer.jks and sealer.kver
+    if all([os.path.isfile(jks_fn), os.path.isfile(kver_fn)]):
+        return
+
+    # files are missing, get them from secrets (if any) or generate new ones
+    try:
+        manager.secret.to_file("sealer_jks_base64", jks_fn, decode=True, binary_mode=True)
+        manager.secret.to_file("sealer_kver_base64", kver_fn, decode=True, binary_mode=True)
+    except TypeError:
         generate_idp3_sealer(manager)
         manager.secret.from_file("sealer_jks_base64", jks_fn, encode=True, binary_mode=True)
         manager.secret.from_file("sealer_kver_base64", kver_fn, encode=True, binary_mode=True)
-        manager.config.set("sealer_generated", True)
-        return
-
-    manager.secret.to_file("sealer_jks_base64", jks_fn, decode=True, binary_mode=True)
-    manager.secret.to_file("sealer_kver_base64", kver_fn, decode=True, binary_mode=True)
 
 
 def modify_jetty_xml():
@@ -193,12 +193,21 @@ def main():
     ldap_mapping = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
     manager = get_manager()
 
-    manager.secret.to_file("idp3SigningCertificateText", "/etc/certs/idp-signing.crt")
-    manager.secret.to_file("idp3EncryptionCertificateText", "/etc/certs/idp-encryption.crt")
-    manager.secret.to_file("idp3SigningKeyText", "/etc/certs/idp-signing.key")
-    manager.secret.to_file("idp3EncryptionKeyText", "/etc/certs/idp-encryption.key")
+    if not os.path.isfile("/etc/certs/idp-signing.crt"):
+        manager.secret.to_file("idp3SigningCertificateText", "/etc/certs/idp-signing.crt")
+
+    if not os.path.isfile("/etc/certs/idp-signing.key"):
+        manager.secret.to_file("idp3SigningKeyText", "/etc/certs/idp-signing.key")
+
+    if not os.path.isfile("/etc/certs/idp-encryption.crt"):
+        manager.secret.to_file("idp3EncryptionCertificateText", "/etc/certs/idp-encryption.crt")
+
+    if not os.path.isfile("/etc/certs/idp-encryption.key"):
+        manager.secret.to_file("idp3EncryptionKeyText", "/etc/certs/idp-encryption.key")
+
     manager.secret.to_file("shibIDP_jks_base64", "/etc/certs/shibIDP.jks",
                            decode=True, binary_mode=True)
+
     sync_sealer(manager)
 
     render_idp3_templates(manager)
@@ -211,7 +220,6 @@ def main():
             "/app/templates/gluu-ldap.properties.tmpl",
             "/etc/gluu/conf/gluu-ldap.properties",
         )
-
         manager.secret.to_file("ldap_ssl_cert", "/etc/certs/opendj.crt", decode=True)
         sync_ldap_truststore(manager)
 
@@ -231,7 +239,9 @@ def main():
     if persistence_type == "hybrid":
         render_hybrid_properties("/etc/gluu/conf/gluu-hybrid.properties")
 
-    get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
+    if not os.path.isfile("/etc/certs/gluu_https.crt"):
+        get_server_certificate(manager.config.get("hostname"), 443, "/etc/certs/gluu_https.crt")
+
     cert_to_truststore(
         "gluu_https",
         "/etc/certs/gluu_https.crt",
