@@ -24,4 +24,5 @@ exec java \
     -Dgluu.base=/etc/gluu \
     -Dserver.base=/opt/gluu/jetty/idp \
     -Dorg.ldaptive.provider=org.ldaptive.provider.unboundid.UnboundIDProvider \
+    -Dpython.home=/opt/jython \
     -jar /opt/jetty/start.jar
