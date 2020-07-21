@@ -1,21 +1,26 @@
-FROM openjdk:8-jre-alpine3.9
+FROM adoptopenjdk/openjdk11:alpine-jre
+
+# symlink JVM
+RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
+    && ln -sf /opt/java/openjdk /usr/lib/jvm/default-jvm/jre \
+    && ln -sf /usr/lib/jvm/default-jvm/jre /usr/java/latest/jre
 
 # ===============
 # Alpine packages
 # ===============
 
 RUN apk update \
-    && apk add --no-cache py-pip openssl py3-pip \
+    && apk add --no-cache openssl py3-pip tini \
     && apk add --no-cache --virtual build-deps wget git
 
 # =====
 # Jetty
 # =====
 
-ENV JETTY_VERSION=9.4.24.v20191120 \
-    JETTY_HOME=/opt/jetty \
-    JETTY_BASE=/opt/gluu/jetty \
-    JETTY_USER_HOME_LIB=/home/jetty/lib
+ARG JETTY_VERSION=9.4.26.v20200117
+ARG JETTY_HOME=/opt/jetty
+ARG JETTY_BASE=/opt/gluu/jetty
+ARG JETTY_USER_HOME_LIB=/home/jetty/lib
 
 # Install jetty
 RUN wget -q https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/${JETTY_VERSION}/jetty-distribution-${JETTY_VERSION}.tar.gz -O /tmp/jetty.tar.gz \
@@ -27,12 +32,22 @@ RUN wget -q https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/
 # Ports required by jetty
 EXPOSE 8080
 
+# ======
+# Jython
+# ======
+
+ARG JYTHON_VERSION=2.7.2
+RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-${JYTHON_VERSION}.jar -O /tmp/jython-installer.jar \
+    && mkdir -p /opt/jython \
+    && java -jar /tmp/jython-installer.jar -v -s -d /opt/jython \
+    && rm -f /tmp/jython-installer.jar
+
 # ============
 # oxShibboleth
 # ============
 
-ENV GLUU_VERSION=4.1.1.Final \
-    GLUU_BUILD_DATE="2020-05-26 18:03"
+ARG GLUU_VERSION=4.2.0.Final
+ARG GLUU_BUILD_DATE="2020-07-13 19:46"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -50,13 +65,6 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${GLUU_VERSION
 # RUN mkdir -p /opt/shibboleth-idp/lib \
 #     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${GLUU_VERSION}.jar /opt/shibboleth-idp/lib/
 
-# ====
-# Tini
-# ====
-
-RUN wget -q https://github.com/krallin/tini/releases/download/v0.18.0/tini-static -O /usr/bin/tini \
-    && chmod +x /usr/bin/tini
-
 # ======
 # rclone
 # ======
@@ -71,9 +79,10 @@ RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}
 # Python
 # ======
 
+RUN apk add --no-cache py3-cryptography
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -U pip \
+    && pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 # =======
 # Cleanup
@@ -161,8 +170,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
 LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
-    version="4.1.1" \
-    release="04" \
+    version="4.2.0" \
+    release="01" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
@@ -181,28 +190,9 @@ COPY static /app/static
 RUN cp /app/static/idp3/password-authn-config.xml /opt/shibboleth-idp/conf/authn/ \
     && cp /app/static/idp3/oxauth-supported-principals.xml /opt/shibboleth-idp/conf/authn/
 
-# RUN cp /opt/shibboleth-idp/conf/global.xml /opt/shibboleth-idp/conf/global.xml.bak
 COPY templates /app/templates
 COPY scripts /app/scripts
 RUN chmod +x /app/scripts/entrypoint.sh
-
-# # create jetty user
-# RUN useradd -ms /bin/sh --uid 1000 jetty \
-#     && usermod -a -G root jetty
-
-# # adjust ownership
-# RUN chown -R 1000:1000 /opt/gluu/jetty \
-#     && chown -R 1000:1000 /deploy \
-#     && chown -R 1000:1000 /opt/shibboleth-idp \
-#     && chmod -R g+w /usr/lib/jvm/default-jvm/jre/lib/security/cacerts \
-#     && chgrp -R 0 /opt/gluu/jetty && chmod -R g=u /opt/gluu/jetty \
-#     && chgrp -R 0 /opt/shibboleth-idp && chmod -R g=u /opt/shibboleth-idp \
-#     && chgrp -R 0 /etc/certs && chmod -R g=u /etc/certs \
-#     && chgrp -R 0 /etc/gluu && chmod -R g=u /etc/gluu \
-#     && chgrp -R 0 /deploy && chmod -R g=u /deploy
-
-# # run as non-root user
-# USER 1000
 
 ENTRYPOINT ["tini", "-e", "143", "-g", "--"]
 CMD ["sh", "/app/scripts/entrypoint.sh"]
