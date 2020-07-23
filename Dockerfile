@@ -161,7 +161,8 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_JCA_URL=http://localhost:8080 \
     GLUU_JCA_USERNAME=admin \
     GLUU_JCA_PASSWORD_FILE=/etc/gluu/conf/jca_password \
-    GLUU_JCA_SYNC_INTERVAL=300
+    GLUU_JCA_SYNC_INTERVAL=300 \
+    GLUU_JAVA_OPTIONS=""
 
 # ==========
 # misc stuff
