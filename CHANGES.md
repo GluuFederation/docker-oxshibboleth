@@ -2,8 +2,12 @@
 
 Here you can see an overview of changes between each release.
 
-<<<<<<< HEAD
-=======
+## Version 4.2.0_02
+
+Released on July 29th, 2020.
+
+* Fixed missing `bash` executable for Jython script. Reference: https://github.com/GluuFederation/docker-oxshibboleth/issues/11.
+
 ## Version 4.2.0_01
 
 Released on July 18th, 2020.
@@ -12,7 +16,6 @@ Released on July 18th, 2020.
 * Upraded to Java 11.
 * Upgraded to Python3.
 
->>>>>>> 4.2
 ## Version 4.1.1_04
 
 Released on June 5th, 2020.

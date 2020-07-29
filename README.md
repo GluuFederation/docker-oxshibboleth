@@ -4,7 +4,7 @@ Docker image packaging for oxShibboleth.
 
 ## Versions
 
-- Stable: `gluufederation/oxshibboleth:4.2.0_01`
+- Stable: `gluufederation/oxshibboleth:4.2.0_02`
 - Unstable: `gluufederation/oxshibboleth:4.2.0_dev`
 
 Refer to [Changelog](./CHANGES.md) for details on new features, bug fixes, or older releases.
