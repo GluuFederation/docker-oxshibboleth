@@ -10,7 +10,7 @@ RUN mkdir -p /usr/lib/jvm/default-jvm /usr/java/latest \
 # ===============
 
 RUN apk update \
-    && apk add --no-cache openssl py3-pip tini \
+    && apk add --no-cache openssl py3-pip tini bash \
     && apk add --no-cache --virtual build-deps wget git
 
 # =====
