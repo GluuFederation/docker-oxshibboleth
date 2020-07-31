@@ -40,14 +40,14 @@ ARG JYTHON_VERSION=2.7.2
 RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-${JYTHON_VERSION}.jar -O /tmp/jython-installer.jar \
     && mkdir -p /opt/jython \
     && java -jar /tmp/jython-installer.jar -v -s -d /opt/jython \
-    && rm -f /tmp/jython-installer.jar
+    && rm -f /tmp/jython-installer.jar /tmp/*.properties
 
 # ============
 # oxShibboleth
 # ============
 
 ARG GLUU_VERSION=4.2.1-SNAPSHOT
-ARG GLUU_BUILD_DATE="2020-07-20 15:29"
+ARG GLUU_BUILD_DATE="2020-07-28 15:19"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -80,9 +80,10 @@ RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}
 # ======
 
 RUN apk add --no-cache py3-cryptography
-COPY requirements.txt /tmp/
+COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir -U pip \
-    && pip3 install --no-cache-dir -r /tmp/requirements.txt
+    && pip3 install --no-cache-dir -r /app/requirements.txt \
+    && rm -rf /src/pygluu-containerlib/.git
 
 # =======
 # Cleanup
