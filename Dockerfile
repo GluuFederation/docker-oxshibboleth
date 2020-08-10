@@ -159,10 +159,9 @@ ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_WAIT_SLEEP_DURATION=10 \
     GLUU_OXTRUST_BACKEND=localhost:8082 \
     GLUU_DOCUMENT_STORE_TYPE=LOCAL \
-    GLUU_JCA_URL=http://localhost:8080 \
-    GLUU_JCA_USERNAME=admin \
-    GLUU_JCA_PASSWORD_FILE=/etc/gluu/conf/jca_password \
-    GLUU_JCA_SYNC_INTERVAL=300 \
+    GLUU_JACKRABBIT_URL=http://localhost:8080 \
+    GLUU_JACKRABBIT_SYNC_INTERVAL=300 \
+    GLUU_JACKRABBIT_ADMIN_ID_FILE=/etc/gluu/conf/jackrabbit_admin_id \
     GLUU_JAVA_OPTIONS=""
 
 # ==========
