@@ -13,6 +13,16 @@ RUN apk update \
     && apk add --no-cache openssl py3-pip tini bash \
     && apk add --no-cache --virtual build-deps wget git
 
+# ======
+# rclone
+# ======
+
+ARG RCLONE_VERSION=v1.51.0
+RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip -O /tmp/rclone.zip \
+    && unzip -qq /tmp/rclone.zip -d /tmp \
+    && mv /tmp/rclone-${RCLONE_VERSION}-linux-amd64/rclone /usr/bin/ \
+    && rm -rf /tmp/rclone-${RCLONE_VERSION}-linux-amd64 /tmp/rclone.zip
+
 # =====
 # Jetty
 # =====
@@ -47,7 +57,7 @@ RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-$
 # ============
 
 ARG GLUU_VERSION=4.2.1-SNAPSHOT
-ARG GLUU_BUILD_DATE="2020-08-07 16:07"
+ARG GLUU_BUILD_DATE="2020-08-11 19:48"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -61,19 +71,6 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${GLUU_VERSION
     && unzip -qq /tmp/shibboleth-idp.jar -d /opt \
     && rm -rf /opt/META-INF \
     && rm -f /tmp/shibboleth-idp.jar
-
-# RUN mkdir -p /opt/shibboleth-idp/lib \
-#     && cp ${JETTY_BASE}/idp/webapps/idp/WEB-INF/lib/saml-openid-auth-client-${GLUU_VERSION}.jar /opt/shibboleth-idp/lib/
-
-# ======
-# rclone
-# ======
-
-ARG RCLONE_VERSION=v1.51.0
-RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip -O /tmp/rclone.zip \
-    && unzip -qq /tmp/rclone.zip -d /tmp \
-    && mv /tmp/rclone-${RCLONE_VERSION}-linux-amd64/rclone /usr/bin/ \
-    && rm -rf /tmp/rclone-${RCLONE_VERSION}-linux-amd64 /tmp/rclone.zip
 
 # ======
 # Python
@@ -157,7 +154,6 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
 ENV GLUU_MAX_RAM_PERCENTAGE=75.0 \
     GLUU_WAIT_MAX_TIME=300 \
     GLUU_WAIT_SLEEP_DURATION=10 \
-    GLUU_OXTRUST_BACKEND=localhost:8082 \
     GLUU_DOCUMENT_STORE_TYPE=LOCAL \
     GLUU_JACKRABBIT_URL=http://localhost:8080 \
     GLUU_JACKRABBIT_SYNC_INTERVAL=300 \
