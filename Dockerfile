@@ -57,7 +57,7 @@ RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-$
 # ============
 
 ENV GLUU_VERSION=4.2.1-SNAPSHOT
-ENV GLUU_BUILD_DATE="2020-08-21 11:25"
+ENV GLUU_BUILD_DATE="2020-08-27 10:48"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
