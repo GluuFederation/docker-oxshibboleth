@@ -5,16 +5,12 @@ import re
 from pygluu.containerlib import get_manager
 from pygluu.containerlib.persistence import render_hybrid_properties
 from pygluu.containerlib.persistence import render_couchbase_properties
-# from pygluu.containerlib.persistence import sync_couchbase_cert
 from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import render_salt
 from pygluu.containerlib.persistence import render_gluu_properties
 from pygluu.containerlib.persistence import render_ldap_properties
 from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
-from pygluu.containerlib.persistence.couchbase import get_couchbase_user
-from pygluu.containerlib.persistence.couchbase import get_couchbase_password
-from pygluu.containerlib.persistence.couchbase import CouchbaseClient
 from pygluu.containerlib.utils import decode_text
 from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
@@ -175,20 +171,6 @@ def saml_couchbase_settings():
         f.write(new_idp3_props)
 
 
-def create_couchbase_shib_user(manager):
-    hostname = GLUU_COUCHBASE_URL
-    user = get_couchbase_user(manager)
-    password = get_couchbase_password(manager)
-
-    cb_client = CouchbaseClient(hostname, user, password)
-    cb_client.create_user(
-        'couchbaseShibUser',
-        manager.secret.get("couchbase_shib_user_password"),
-        'Shibboleth IDP',
-        'query_select[*]',
-    )
-
-
 def main():
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
     ldap_mapping = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
@@ -230,9 +212,7 @@ def main():
             "/app/templates/gluu-couchbase.properties.tmpl",
             "/etc/gluu/conf/gluu-couchbase.properties",
         )
-        # sync_couchbase_cert(manager)
         sync_couchbase_truststore(manager)
-        create_couchbase_shib_user(manager)
 
         if "user" in get_couchbase_mappings(persistence_type, ldap_mapping):
             saml_couchbase_settings()

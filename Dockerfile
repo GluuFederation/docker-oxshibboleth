@@ -57,7 +57,7 @@ RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-$
 # ============
 
 ENV GLUU_VERSION=4.2.1.Final
-ENV GLUU_BUILD_DATE="2020-09-16 13:42"
+ENV GLUU_BUILD_DATE="2020-09-22 19:14"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -170,7 +170,7 @@ LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
     version="4.2.1" \
-    release="01" \
+    release="02" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
