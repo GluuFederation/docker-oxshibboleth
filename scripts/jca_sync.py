@@ -2,48 +2,56 @@ import contextlib
 import glob
 import logging.config
 import os
+import shutil
 import time
 
-from pygluu.containerlib.document import RClone
+from webdav3.client import Client
+from webdav3.exceptions import RemoteResourceNotFound
+from webdav3.exceptions import NoConnection
 
 from settings import LOGGING_CONFIG
 
 ROOT_DIR = "/repository/default"
 SYNC_DIR = "/opt/shibboleth-idp"
+TMP_DIR = "/tmp/webdav"
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger("webdav")
 
 
 def sync_from_webdav(url, username, password):
-    rclone = RClone(url, username, password)
-    rclone.configure()
+    client = Client({
+        "webdav_hostname": url,
+        "webdav_login": username,
+        "webdav_password": password,
+        "webdav_root": ROOT_DIR,
+    })
+    client.verify = False
 
-    logger.info(f"Sync files with remote directory {url}{ROOT_DIR}{SYNC_DIR}")
-    rclone.copy_from(SYNC_DIR, SYNC_DIR)
+    try:
+        logger.info(f"Sync files from {url}{ROOT_DIR}{SYNC_DIR}")
+        # download files to temporary directory to avoid `/opt/shibboleth-idp`
+        # getting deleted
+        client.download(SYNC_DIR, TMP_DIR)
+
+        # copy all downloaded files to /opt/shibboleth-idp
+        for subdir, _, files in os.walk(TMP_DIR):
+            for file_ in files:
+                src = os.path.join(subdir, file_)
+                dest = src.replace(TMP_DIR, SYNC_DIR)
+
+                if not os.path.exists(os.path.dirname(dest)):
+                    os.makedirs(os.path.dirname(dest))
+                # logger.info(f"Copying {src} to {dest}")
+                shutil.copyfile(src, dest)
+    except (RemoteResourceNotFound, NoConnection) as exc:
+        logger.warning(f"Unable to sync files from {url}{ROOT_DIR}{SYNC_DIR}; reason={exc}")
 
 
-def prune_local_tr(url, username, password):
-    def remote_tr_files(files):
-        for f in files:
-            f = f.strip().split(" ")[1]
-            if f.endswith("-sp-metadata.xml"):
-                yield f
-
-    rclone = RClone(url, username, password)
-    rclone.configure()
-
-    logger.info(f"Removing obsolete local TR files (if any)")
-    out = rclone.ls("/opt/shibboleth-idp/metadata")
-    files = tuple(remote_tr_files(out.decode().splitlines()))
-
-    for file_ in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
-        basename = os.path.basename(file_)
-        if basename in files:
-            continue
-
-        with contextlib.suppress(FileNotFoundError):
-            os.unlink(file_)
+def get_jackrabbit_url():
+    if "GLUU_JCA_URL" in os.environ:
+        return os.environ["GLUU_JCA_URL"]
+    return os.environ.get("GLUU_JACKRABBIT_URL", "http://localhost:8080")
 
 
 def get_sync_interval():
@@ -59,12 +67,6 @@ def get_sync_interval():
     except ValueError:
         interval = default
     return interval
-
-
-def get_jackrabbit_url():
-    if "GLUU_JCA_URL" in os.environ:
-        return os.environ["GLUU_JCA_URL"]
-    return os.environ.get("GLUU_JACKRABBIT_URL", "http://localhost:8080")
 
 
 def main():
@@ -95,6 +97,33 @@ def main():
             time.sleep(sync_interval)
     except KeyboardInterrupt:
         logger.warning("Canceled by user; exiting ...")
+
+
+def prune_local_tr(url, username, password):
+    def remote_tr_files(files):
+        for f in files:
+            if f.endswith("-sp-metadata.xml"):
+                yield f
+
+    client = Client({
+        "webdav_hostname": url,
+        "webdav_login": username,
+        "webdav_password": password,
+        "webdav_root": ROOT_DIR,
+    })
+    client.verify = False
+
+    logger.info("Removing obsolete local TR files (if any)")
+    files = client.list("/opt/shibboleth-idp/metadata")
+    files = tuple(remote_tr_files(files))
+
+    for file_ in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
+        basename = os.path.basename(file_)
+        if basename in files:
+            continue
+
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(file_)
 
 
 if __name__ == "__main__":
