@@ -34,6 +34,8 @@ def render_idp3_templates(manager):
             "user" in get_couchbase_mappings(persistence_type, ldap_mapping)]):
         idp_resolver_filter = "(&(|(lower(uid)=$requestContext.principalName)(mail=$requestContext.principalName))(objectClass=gluuPerson))"
 
+    bucket_prefix = os.environ.get("GLUU_COUCHBASE_BUCKET_PREFIX", "gluu")
+
     ctx = {
         "hostname": manager.config.get("hostname"),
         "shibJksPass": manager.secret.get("shibJksPass"),
@@ -49,6 +51,7 @@ def render_idp3_templates(manager):
         "couchbase_hostname": GLUU_COUCHBASE_URL,
         "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
         "idp_attribute_resolver_ldap.search_filter": idp_resolver_filter,
+        "user_bucket": f"{bucket_prefix}_user"
     }
 
     for file_path in glob.glob("/app/templates/idp3/*.properties"):
