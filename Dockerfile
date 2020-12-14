@@ -76,7 +76,7 @@ RUN wget -q https://ox.gluu.org/maven/org/gluu/oxShibbolethStatic/${GLUU_VERSION
 # Python
 # ======
 
-RUN apk add --no-cache py3-cryptography
+RUN apk add --no-cache py3-cryptography py3-lxml
 COPY requirements.txt /app/
 RUN pip3 install --no-cache-dir -U pip \
     && pip3 install --no-cache-dir -r /app/requirements.txt \
