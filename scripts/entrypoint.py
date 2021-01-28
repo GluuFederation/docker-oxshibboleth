@@ -5,7 +5,7 @@ import re
 from pygluu.containerlib import get_manager
 from pygluu.containerlib.persistence import render_hybrid_properties
 from pygluu.containerlib.persistence import render_couchbase_properties
-from pygluu.containerlib.persistence import sync_couchbase_cert
+# from pygluu.containerlib.persistence import sync_couchbase_cert
 from pygluu.containerlib.persistence import sync_couchbase_truststore
 from pygluu.containerlib.persistence import render_salt
 from pygluu.containerlib.persistence import render_gluu_properties
@@ -20,6 +20,7 @@ from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
 from pygluu.containerlib.utils import cert_to_truststore
 from pygluu.containerlib.utils import get_server_certificate
+from pygluu.containerlib.utils import as_boolean
 
 GLUU_LDAP_URL = os.environ.get("GLUU_LDAP_URL", "localhost:1636")
 GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
@@ -50,6 +51,7 @@ def render_idp3_templates(manager):
         "orgName": manager.config.get("orgName"),
         "ldapCertFn": "/etc/certs/opendj.crt",
         "couchbase_hostname": GLUU_COUCHBASE_URL,
+        "couchbase_n1ql_port": 18093 if as_boolean(os.environ.get("GLUU_COUCHBASE_TRUSTSTORE_ENABLE", True)) else 8093,
         "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
         "idp_attribute_resolver_ldap.search_filter": idp_resolver_filter,
     }
@@ -229,7 +231,7 @@ def main():
             "/app/templates/gluu-couchbase.properties.tmpl",
             "/etc/gluu/conf/gluu-couchbase.properties",
         )
-        sync_couchbase_cert(manager)
+        # sync_couchbase_cert(manager)
         sync_couchbase_truststore(manager)
         create_couchbase_shib_user(manager)
 
