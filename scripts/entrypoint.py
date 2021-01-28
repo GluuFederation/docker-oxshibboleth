@@ -49,6 +49,7 @@ def render_idp3_templates(manager):
         "orgName": manager.config.get("orgName"),
         "ldapCertFn": "/etc/certs/opendj.crt",
         "couchbase_hostname": GLUU_COUCHBASE_URL,
+        "couchbase_n1ql_port": 18093 if as_boolean(os.environ.get("GLUU_COUCHBASE_TRUSTSTORE_ENABLE", True)) else 8093,
         "couchbaseShibUserPassword": manager.secret.get("couchbase_shib_user_password"),
         "idp_attribute_resolver_ldap.search_filter": idp_resolver_filter,
         "user_bucket": f"{bucket_prefix}_user"

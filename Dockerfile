@@ -13,15 +13,15 @@ RUN apk update \
     && apk add --no-cache openssl py3-pip tini bash \
     && apk add --no-cache --virtual build-deps wget git
 
-# ======
-# rclone
-# ======
+# # ======
+# # rclone
+# # ======
 
-ARG RCLONE_VERSION=v1.51.0
-RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip -O /tmp/rclone.zip \
-    && unzip -qq /tmp/rclone.zip -d /tmp \
-    && mv /tmp/rclone-${RCLONE_VERSION}-linux-amd64/rclone /usr/bin/ \
-    && rm -rf /tmp/rclone-${RCLONE_VERSION}-linux-amd64 /tmp/rclone.zip
+# ARG RCLONE_VERSION=v1.51.0
+# RUN wget -q https://github.com/rclone/rclone/releases/download/${RCLONE_VERSION}/rclone-${RCLONE_VERSION}-linux-amd64.zip -O /tmp/rclone.zip \
+#     && unzip -qq /tmp/rclone.zip -d /tmp \
+#     && mv /tmp/rclone-${RCLONE_VERSION}-linux-amd64/rclone /usr/bin/ \
+#     && rm -rf /tmp/rclone-${RCLONE_VERSION}-linux-amd64 /tmp/rclone.zip
 
 # =====
 # Jetty
@@ -146,7 +146,8 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
     GLUU_COUCHBASE_CONN_TIMEOUT=10000 \
     GLUU_COUCHBASE_CONN_MAX_WAIT=20000 \
     GLUU_COUCHBASE_SCAN_CONSISTENCY=not_bounded \
-    GLUU_COUCHBASE_BUCKET_PREFIX=gluu
+    GLUU_COUCHBASE_BUCKET_PREFIX=gluu \
+    GLUU_COUCHBASE_TRUSTSTORE_ENABLE=true
 
 # ===========
 # Generic ENV
