@@ -113,17 +113,21 @@ def prune_local_tr(url, username, password):
     })
     client.verify = False
 
-    logger.info("Removing obsolete local TR files (if any)")
-    files = client.list("/opt/shibboleth-idp/metadata")
-    files = tuple(remote_tr_files(files))
+    try:
+        logger.info("Removing obsolete local TR files (if any)")
 
-    for file_ in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
-        basename = os.path.basename(file_)
-        if basename in files:
-            continue
+        files = client.list("/opt/shibboleth-idp/metadata")
+        files = tuple(remote_tr_files(files))
 
-        with contextlib.suppress(FileNotFoundError):
-            os.unlink(file_)
+        for file_ in glob.iglob("/opt/shibboleth-idp/metadata/*-sp-metadata.xml"):
+            basename = os.path.basename(file_)
+            if basename in files:
+                continue
+
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(file_)
+    except (RemoteResourceNotFound, NoConnection) as exc:
+        logger.warning(f"Unable to get TR files from {url}{ROOT_DIR}{SYNC_DIR}/metadata; reason={exc}")
 
 
 if __name__ == "__main__":
