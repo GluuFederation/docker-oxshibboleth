@@ -43,7 +43,10 @@ def render_idp3_templates(manager):
         "ldap_hostname": ldap_hostname,
         "ldaps_port": ldaps_port,
         "ldap_binddn": manager.config.get("ldap_binddn"),
-        "ldapPass": decode_text(manager.secret.get("encoded_ox_ldap_pw"), manager.secret.get("encoded_salt")),
+        "ldapPass": decode_text(
+            manager.secret.get("encoded_ox_ldap_pw"),
+            manager.secret.get("encoded_salt"),
+        ).decode(),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
