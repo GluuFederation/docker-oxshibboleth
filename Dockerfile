@@ -6,7 +6,7 @@ FROM alpine:3.13
 
 RUN apk update \
     && apk add --no-cache openssl py3-pip tini bash openjdk11-jre-headless py3-cryptography py3-lxml \
-    && apk add --no-cache --virtual build-deps wget git gcc musl-dev python3-dev libffi-dev openssl-dev libxml2-dev libxslt-dev cargo \
+    && apk add --no-cache --virtual build-deps wget git \
     && mkdir -p /usr/java/latest \
     && ln -sf /usr/lib/jvm/default-jvm/jre /usr/java/latest/jre
 
