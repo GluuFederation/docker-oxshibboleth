@@ -53,6 +53,8 @@ The following environment variables are supported by the container:
 - `GLUU_COUCHBASE_SCAN_CONSISTENCY`: Default scan consistency; one of `not_bounded`, `request_plus`, or `statement_plus` (default to `not_bounded`).
 - `GLUU_COUCHBASE_BUCKET_PREFIX`: Prefix for Couchbase buckets (default to `gluu`).
 - `GLUU_COUCHBASE_TRUSTSTORE_ENABLE`: Enable truststore for encrypted Couchbase connection (default to `true`).
+- `GLUU_COUCHBASE_KEEPALIVE_INTERVAL`: Keep-alive interval for Couchbase connection (default to `30000` milliseconds).
+- `GLUU_COUCHBASE_KEEPALIVE_TIMEOUT`: Keep-alive timeout for Couchbase connection (default to `2500` milliseconds).
 - `GLUU_DOCUMENT_STORE_TYPE`: Document store type (one of `LOCAL` or `JCA`; default to `LOCAL`).
 - `GLUU_JCA_URL`: __DEPRECATED__ in favor of `GLUU_JACKRABBIT_URL`.
 - `GLUU_JACKRABBIT_URL`: URL to remote repository (default to `http://localhost:8080`).
