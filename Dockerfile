@@ -45,7 +45,7 @@ RUN wget -q https://ox.gluu.org/dist/jython/${JYTHON_VERSION}/jython-installer-$
 # ============
 
 ENV GLUU_VERSION=4.2.3.Final
-ENV GLUU_BUILD_DATE="2021-02-02 12:46"
+ENV GLUU_BUILD_DATE="2021-03-10 10:47"
 
 # Install oxShibboleth WAR
 RUN wget -q https://ox.gluu.org/maven/org/gluu/oxshibbolethIdp/${GLUU_VERSION}/oxshibbolethIdp-${GLUU_VERSION}.war -O /tmp/oxshibboleth.war \
@@ -134,7 +134,9 @@ ENV GLUU_PERSISTENCE_TYPE=ldap \
     GLUU_COUCHBASE_CONN_MAX_WAIT=20000 \
     GLUU_COUCHBASE_SCAN_CONSISTENCY=not_bounded \
     GLUU_COUCHBASE_BUCKET_PREFIX=gluu \
-    GLUU_COUCHBASE_TRUSTSTORE_ENABLE=true
+    GLUU_COUCHBASE_TRUSTSTORE_ENABLE=true \
+    GLUU_COUCHBASE_KEEPALIVE_INTERVAL=30000 \
+    GLUU_COUCHBASE_KEEPALIVE_TIMEOUT=2500
 
 # ===========
 # Generic ENV
