@@ -161,7 +161,7 @@ LABEL name="oxShibboleth" \
     maintainer="Gluu Inc. <support@gluu.org>" \
     vendor="Gluu Federation" \
     version="4.2.3" \
-    release="03" \
+    release="04" \
     summary="Gluu oxShibboleth" \
     description="Shibboleth project for the Gluu Server's SAML IDP functionality"
 
