@@ -11,6 +11,8 @@ from pygluu.containerlib.persistence import render_gluu_properties
 from pygluu.containerlib.persistence import render_ldap_properties
 from pygluu.containerlib.persistence import sync_ldap_truststore
 from pygluu.containerlib.persistence.couchbase import get_couchbase_mappings
+from pygluu.containerlib.persistence.ldap import extract_ldap_host
+from pygluu.containerlib.persistence.ldap import resolve_ldap_port
 from pygluu.containerlib.utils import decode_text
 from pygluu.containerlib.utils import exec_cmd
 from pygluu.containerlib.utils import safe_render
@@ -23,8 +25,6 @@ GLUU_COUCHBASE_URL = os.environ.get("GLUU_COUCHBASE_URL", "localhost")
 
 
 def render_idp3_templates(manager):
-    ldap_hostname, ldaps_port = GLUU_LDAP_URL.split(":")
-
     persistence_type = os.environ.get("GLUU_PERSISTENCE_TYPE", "ldap")
     ldap_mapping = os.environ.get("GLUU_PERSISTENCE_LDAP_MAPPING", "default")
 
@@ -36,17 +36,25 @@ def render_idp3_templates(manager):
 
     bucket_prefix = os.environ.get("GLUU_COUCHBASE_BUCKET_PREFIX", "gluu")
 
+    ldap_use_ssl = as_boolean(os.environ.get("GLUU_LDAP_USE_SSL", True))
+    if ldap_use_ssl:
+        ldap_scheme = "ldaps"
+    else:
+        ldap_scheme = "ldap"
+
     ctx = {
         "hostname": manager.config.get("hostname"),
         "shibJksPass": manager.secret.get("shibJksPass"),
         "certFolder": "/etc/certs",
-        "ldap_hostname": ldap_hostname,
-        "ldaps_port": ldaps_port,
+        "ldap_hostname": extract_ldap_host(GLUU_LDAP_URL),
+        "ldaps_port": resolve_ldap_port(),
+        "ldap_scheme": ldap_scheme,
         "ldap_binddn": manager.config.get("ldap_binddn"),
         "ldapPass": decode_text(
             manager.secret.get("encoded_ox_ldap_pw"),
             manager.secret.get("encoded_salt"),
         ).decode(),
+        "ldap_use_ssl": str(ldap_use_ssl).lower(),
         "idp3SigningCertificateText": load_cert_text("/etc/certs/idp-signing.crt"),
         "idp3EncryptionCertificateText": load_cert_text("/etc/certs/idp-encryption.crt"),
         "orgName": manager.config.get("orgName"),
